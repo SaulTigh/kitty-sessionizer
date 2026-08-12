@@ -1,0 +1,63 @@
+#!/usr/bin/env zsh
+#
+# kitty-sessionizer — pick a project, switch the kitty session.
+#
+# This file only finds the repository, loads the prelude, and runs one action.
+# An action is a file in libexec/. To add one, write libexec/<name>.zsh. The
+# help text and the argument check pick it up with no change here.
+
+set -euo pipefail
+
+# :A resolves the symlink that `make install` puts in ~/.local/bin, so the
+# libraries are found in the repository. $0 changes inside a sourced file, which
+# is why the paths are taken here and exported to every module.
+typeset -g KS_ROOT="${0:A:h:h}"
+typeset -g KS_LIB="$KS_ROOT/lib"
+typeset -g KS_LIBEXEC="$KS_ROOT/libexec"
+
+source "$KS_LIB/bootstrap.zsh"
+ks_use common
+
+ks_action_names() { print -rl -- "$KS_LIBEXEC"/*.zsh(N:t:r) }
+
+# One-line description of an action, taken from its `# summary:` comment.
+ks_action_summary() {
+    local file="$KS_LIBEXEC/$1.zsh" line
+    REPLY=""
+    [[ -r "$file" ]] || return 0
+    while IFS= read -r line; do
+        [[ "$line" == '# summary:'* ]] || continue
+        REPLY="${${line#\# summary:}## }"
+        return 0
+    done < "$file"
+    return 0
+}
+
+ks_usage() {
+    local name
+    print -r -- "Usage: kitty-sessionizer <action>"
+    print -r -- ""
+    print -r -- "Actions:"
+    for name in $(ks_action_names); do
+        ks_action_summary "$name"
+        printf '  %-10s %s\n' "$name" "$REPLY"
+    done
+    print -r -- "  help       Show this text"
+}
+
+typeset -g ks_action="${1:-help}"
+(( $# )) && shift
+
+case "$ks_action" in
+    help|-h|--help)
+        ks_usage
+        exit 0
+        ;;
+esac
+
+if [[ ! -r "$KS_LIBEXEC/$ks_action.zsh" ]]; then
+    ks_usage >&2
+    ks_die "unknown action: $ks_action"
+fi
+
+source "$KS_LIBEXEC/$ks_action.zsh"
