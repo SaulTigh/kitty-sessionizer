@@ -17,18 +17,27 @@ typeset -g ks_current_session="${ks_current_session:-}"
 typeset -gA ks_active_map
 
 # Build the rows. Needs `ks_current_session` and `ks_active_map` from the caller.
+#
+# Only a directory is a project. A plain file opens in the editor and never
+# enters a session, so it gets no session field and no marker. Without that a
+# file marks itself as the current session as soon as its name matches the name
+# of the session, because a session is named after the last part of the path.
 ks_picker_rows() {
     local entry session tag
     ks_find_entries | while IFS= read -r entry; do
-        ks_session_path_for "$entry"
-        session="$REPLY"
+        session=""
+        if [[ -d "$entry" ]]; then
+            ks_session_path_for "$entry"
+            session="$REPLY"
+        fi
 
-        if [[ "$session" == "$ks_current_session" ]]; then
-            tag="$KS_TAG_CURRENT"
-        elif (( ${+ks_active_map[$session]} )); then
-            tag="$KS_TAG_ACTIVE"
-        else
-            tag="$KS_TAG_NONE"
+        tag="$KS_TAG_NONE"
+        if [[ -n "$session" ]]; then
+            if [[ "$session" == "$ks_current_session" ]]; then
+                tag="$KS_TAG_CURRENT"
+            elif (( ${+ks_active_map[$session]} )); then
+                tag="$KS_TAG_ACTIVE"
+            fi
         fi
 
         ks_pad "$KS_PAD" "$tag ${entry:h:t}/${entry:t}"
@@ -36,10 +45,11 @@ ks_picker_rows() {
     done
 }
 
-# Run the picker and write the selected row to standard output. Returns non-zero
-# when the user aborts.
+# Run the picker over the rows on standard input and write the selected row to
+# standard output. Returns non-zero when the user aborts. The argument is the fzf
+# options to use, so an action with its own list can bring its own picker look.
 ks_picker_run() {
-    FZF_DEFAULT_OPTS="$KS_FZF_OPTS" "$KS_FZF"
+    FZF_DEFAULT_OPTS="${1:-$KS_FZF_OPTS}" "$KS_FZF"
 }
 
 # Read one field out of a selected row. Result in REPLY.

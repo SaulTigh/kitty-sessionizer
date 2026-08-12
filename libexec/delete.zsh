@@ -40,9 +40,9 @@ ks_dim "  Removes saved layouts from ${KS_SESSION_DIR/#$HOME/~}."
 ks_dim "  Project files are untouched."
 ks_blank
 if (( ks_keep_option )); then
-    ks_info "  [Enter/o] all except current ($ks_others_count)   [a] all ($ks_count)   [any other key] cancel"
+    ks_keys "  [Enter/o] all except current ($ks_others_count)   [a] all ($ks_count)   [any other key] cancel"
 else
-    ks_info "  [a] all ($ks_count)   [any other key] cancel"
+    ks_keys "  [a] all ($ks_count)   [any other key] cancel"
 fi
 
 ks_read_key

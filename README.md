@@ -12,6 +12,7 @@ its own session file, so its tabs and panes come back the way you left them.
 | fzf | the picker |
 | tree | preview a directory |
 | bat | preview a file |
+| git | clone a repository |
 
 kitty must allow remote control. `kitty.conf` needs these two lines:
 
@@ -33,6 +34,7 @@ Run `make uninstall` to remove the link.
 
 ```
 kitty-sessionizer open      Pick a project and switch to its kitty session
+kitty-sessionizer clone     Clone a git repository into a workspace directory
 kitty-sessionizer delete    Delete saved kitty sessions
 kitty-sessionizer help      List the actions
 ```
@@ -46,6 +48,20 @@ A marker in the picker shows the state of each project:
 | none | no session yet |
 
 Select a plain file instead of a directory to open it in a new tab in `$KS_EDITOR`.
+
+## Clone a repository
+
+`kitty-sessionizer clone` asks four things, in this order:
+
+1. The clone URL. Paste it. An empty answer cancels.
+2. The directory to clone into. The picker lists the `KS_SEARCH_PATHS` that
+   exist, so the clone lands where `open` will find it again.
+3. The folder name. The repository name is filled in, so press Enter to keep it
+   or edit the line to change it.
+4. `[Enter]` to switch to the session of the clone, or any other key to close.
+
+The action stops when the folder name is already in use. Nothing is deleted and
+nothing is overwritten. Run it again with another name.
 
 ## How a session file is chosen
 
@@ -70,6 +86,7 @@ The values you are most likely to change:
 | `KS_SESSION_DIR` | `~/.local/share/kitty/sessions` |
 | `KS_TEMPLATE` | `~/.config/kitty/default.kitty-session` |
 | `KS_EDITOR` | `nvim` |
+| `KS_GIT` | `/usr/bin/git` |
 
 `KS_SEARCH_PATHS` is an array, and an array cannot cross a process boundary. To
 change the search paths for one run, use the colon-separated `KS_SEARCH_PATH`
@@ -83,8 +100,9 @@ libexec/*.zsh           One file per action
 lib/bootstrap.zsh       ks_use, ks_die, ks_require_tools
 lib/config.zsh          Every tunable value
 lib/common.zsh          The prelude: loads config and ui, adds small helpers
-lib/ui.zsh              Colours, messages, key prompt
+lib/ui.zsh              Colours, messages, key and line prompts
 lib/kitty.zsh           Wrappers over `kitten @`
+lib/git.zsh             Wrappers over `git`
 lib/session.zsh         Session files and the record of open sessions
 lib/discovery.zsh       Stream the candidate paths
 lib/picker.zsh          fzf options, row format, selection parse
@@ -128,6 +146,10 @@ Run `make check` to parse every script. Then:
 5. Select the same project three times. `/tmp/kitty-active-sessions` holds one
    line for it, not three.
 6. Press `alt+shift+d`. Check the counts, then cancel. Nothing is deleted.
+7. Press `alt+shift+c`. Paste a URL, pick a directory, keep the name, and press
+   Enter at the last prompt. kitty switches to the clone.
+8. Press `alt+shift+c` again and give the same name. The action reports the
+   clash and clones nothing.
 
 To try an action against throwaway state, point the variables somewhere else:
 

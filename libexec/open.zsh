@@ -32,7 +32,4 @@ fi
 
 [[ -d "$ks_target" && -n "$ks_session_file" ]] || ks_die "unusable selection: $ks_selected"
 
-ks_session_ensure "$ks_session_file" "$ks_target"
-ks_tracker_set_current "$ks_session_file"
-ks_tracker_add_active "$ks_session_file"
-ks_kitty_goto_session "$ks_session_file"
+ks_session_enter "$ks_target"

@@ -12,6 +12,7 @@
 : ${KS_KITTEN:=/opt/homebrew/bin/kitten}
 : ${KS_TREE:=/opt/homebrew/bin/tree}
 : ${KS_BAT:=/opt/homebrew/bin/bat}
+: ${KS_GIT:=/usr/bin/git}
 : ${KS_EDITOR:=nvim}
 
 # --- Locations ----------------------------------------------------------------
@@ -71,14 +72,21 @@ fi
 
 : ${KS_C_WARN:=$'\e[1;38;2;207;106;76m'}
 : ${KS_C_OK:=$'\e[38;2;153;173;106m'}
+
+# The blue the picker gives its prompt, so a question in the terminal and a
+# question in the picker look the same. A key choice takes it too, because both
+# mark the place where the user acts.
+: ${KS_C_PROMPT:=$'\e[1;38;2;143;191;220m'}
+: ${KS_C_KEY:=$KS_C_PROMPT}
+
 : ${KS_C_DIM:=$'\e[2m'}
 : ${KS_C_RESET:=$'\e[0m'}
 
 # --- Picker -------------------------------------------------------------------
-# Field 1 is searchable and shown, field 2 is shown only, fields 3 and 4 carry
-# the data the action needs.
+# The look every picker shares. Each picker below adds its own label, prompt and
+# preview to it, so a colour is written once.
 
-: ${KS_FZF_OPTS:="--style=full \
+: ${KS_FZF_THEME:="--style=full \
   --color=bg+:#303030,bg:-1,spinner:#fad07a,hl:#fad07a,fg:#e8e8e8 \
   --color=header:#888888,info:#b4b4b9,pointer:#cf6a4c,marker:#99ad6a \
   --color=fg+:#ffffff,prompt:#8fbfdc,hl+:#cf6a4c,border:#333333 \
@@ -86,6 +94,12 @@ fi
   --color=label:#cf6a4c \
   --border=sharp \
   --padding=8 \
+  --layout=reverse"}
+
+# The project picker. Field 1 is searchable and shown, field 2 is shown only,
+# fields 3 and 4 carry the data the action needs.
+
+: ${KS_FZF_OPTS:="$KS_FZF_THEME \
   --with-nth 1,2 \
   --nth 1 \
   --tabstop=1 \
@@ -95,5 +109,14 @@ fi
   --bind='ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up' \
   --prompt='Select workspace >> ' \
   --preview 'if [ -d \"{4}\" ]; then ${KS_TREE} --gitignore -C -L 2 \"{4}\"; else ${KS_BAT} --color=always --style=numbers \"{4}\"; fi' \
-  --preview-window='right,55%,border-sharp' \
-  --layout=reverse"}
+  --preview-window='right,55%,border-sharp'"}
+
+# The clone-target picker. A row is one plain path, so this picker needs no
+# delimiter and no hidden field.
+
+: ${KS_FZF_DIR_OPTS:="$KS_FZF_THEME \
+  --border-label='Clone target' \
+  --header='Controls: [Enter] Select, [Ctrl-C] Abort' \
+  --prompt='Clone into >> ' \
+  --preview '${KS_TREE} --gitignore -C -L 1 \"{}\"' \
+  --preview-window='right,55%,border-sharp'"}

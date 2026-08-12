@@ -1,6 +1,6 @@
 # Session files and the record of which sessions are open.
 
-ks_use common
+ks_use common kitty
 
 # Where the session file for a project lives. A project that carries its own
 # layout wins over the generated one. Result in REPLY.
@@ -26,6 +26,21 @@ ks_session_ensure() {
 
     mkdir -p "${session:h}"
     print -r -- "$body" > "$session"
+}
+
+# Switch to the session of a project, and record the move. Every action that
+# enters a project goes through here, so the trackers never miss one.
+#
+# The caller saves the layout of the session it leaves, because each action does
+# that at a different moment.
+ks_session_enter() {
+    local repo="$1" session
+    ks_session_path_for "$repo"
+    session="$REPLY"
+    ks_session_ensure "$session" "$repo"
+    ks_tracker_set_current "$session"
+    ks_tracker_add_active "$session"
+    ks_kitty_goto_session "$session"
 }
 
 # Every saved session file, in the array `ks_sessions`.
