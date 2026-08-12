@@ -30,10 +30,10 @@ ks_kitty_close_tabs() {
     ks_kitty close-tab --match "$1"
 }
 
-# kitty reads a title match as a regular expression, so a session name with a
-# dot or a bracket has to be escaped first. A space becomes \s because the tab
-# title is built from the session name and a separator.
-ks_kitty_title_pattern() {
+# kitty reads a match value as a regular expression, so a name with a dot or a
+# bracket has to be escaped first. A space becomes \s because kitty splits a
+# match expression on spaces to read its boolean operators.
+ks_kitty_match_pattern() {
     local out="$1" ch
     for ch in '\' '[' ']' '^' '$' '.' '|' '*' '+' '?' '(' ')' '{' '}'; do
         out="${out//"$ch"/\\$ch}"

@@ -25,15 +25,24 @@ ks_session_path_for() {
 }
 
 # Render the template for a project. Runs once, on the first switch to it.
+#
+# @@session@@ is the project alone, not the name of the session file. The
+# template writes it into the tab title, and a title reads better without the
+# directory in front of it. kitty keeps the sessions apart on its own: it names
+# a session after its file, so a match on `session:` still finds one session.
 ks_session_ensure() {
     local session="$1" repo="$2" body
     [[ -f "$session" ]] && return 0
     [[ -d "$repo" ]] || ks_die "not a directory: $repo"
     [[ -r "$KS_TEMPLATE" ]] || ks_die "missing session template: $KS_TEMPLATE"
 
+    while [[ "$repo" == */ ]]; do
+        repo="${repo%/}"
+    done
+
     body="$(<"$KS_TEMPLATE")"
     body="${body//@@session-path@@/$repo}"
-    body="${body//@@session@@/${session:t:r}}"
+    body="${body//@@session@@/${repo:t}}"
 
     mkdir -p "${session:h}"
     print -r -- "$body" > "$session"

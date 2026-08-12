@@ -69,14 +69,19 @@ nothing is overwritten. Run it again with another name.
 2. Otherwise the file is
    `~/.local/share/kitty/sessions/<directory>-<project>.kitty-session`.
    It is rendered once from `~/.config/kitty/default.kitty-session`. The template
-   may use `@@session@@` for the session name and `@@session-path@@` for the path
+   may use `@@session@@` for the project name and `@@session-path@@` for the path
    of the project.
 
-The name holds the directory as well as the project, as in `personal-roboboba`.
-Every generated file shares one flat directory, and the project name alone is
-not unique: `workspace/personal/roboboba` and `workspace/backups/roboboba` are
-two projects. With the project name alone they would share one session file and
-one tab title. `KS_SESSION_NAME_SEP` sets the mark between the two parts.
+The file name holds the directory as well as the project, as in
+`personal-roboboba`. Every generated file shares one flat directory, and the
+project name alone is not unique: `workspace/personal/roboboba` and
+`workspace/backups/roboboba` are two projects, and one name would give them one
+session. `KS_SESSION_NAME_SEP` sets the mark between the two parts.
+
+`@@session@@` stays the project alone, so a tab title reads `roboboba`, not
+`personal-roboboba`. kitty tells the two sessions apart on its own, because it
+names a session after its file. That is why `delete` closes tabs with a
+`session:` match and not with a title match.
 
 ## Configure
 

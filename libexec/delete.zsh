@@ -65,8 +65,11 @@ if (( ks_keep_option )) && [[ "$ks_choice" == ([oO]|$'\n'|$'\r') ]]; then
     rm -f "${ks_others[@]}"
     ks_write_lines "$KS_ACTIVE_TRACKER" "$ks_current"
 
-    ks_kitty_title_pattern "${ks_current:t:r}"
-    ks_kitty_close_tabs "not title:^${REPLY}\s::"
+    # Match on the session, not on the title. kitty names a session after its
+    # file, so the match is exact, while two projects of the same name now write
+    # the same tab title.
+    ks_kitty_match_pattern "${ks_current:t:r}"
+    ks_kitty_close_tabs "not session:^${REPLY}\$"
 
     ks_blank
     ks_ok "✔ Deleted $ks_others_count $ks_others_label, kept ▶ ${ks_current:t:r}."
