@@ -66,9 +66,17 @@ nothing is overwritten. Run it again with another name.
 ## How a session file is chosen
 
 1. If the project holds a `.kitty-session` file, that file is used.
-2. Otherwise the file is `~/.local/share/kitty/sessions/<project>.kitty-session`.
+2. Otherwise the file is
+   `~/.local/share/kitty/sessions/<directory>-<project>.kitty-session`.
    It is rendered once from `~/.config/kitty/default.kitty-session`. The template
-   may use `@@session@@` for the project name and `@@session-path@@` for its path.
+   may use `@@session@@` for the session name and `@@session-path@@` for the path
+   of the project.
+
+The name holds the directory as well as the project, as in `personal-roboboba`.
+Every generated file shares one flat directory, and the project name alone is
+not unique: `workspace/personal/roboboba` and `workspace/backups/roboboba` are
+two projects. With the project name alone they would share one session file and
+one tab title. `KS_SESSION_NAME_SEP` sets the mark between the two parts.
 
 ## Configure
 

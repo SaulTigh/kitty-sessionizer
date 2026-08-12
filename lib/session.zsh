@@ -4,13 +4,24 @@ ks_use common kitty
 
 # Where the session file for a project lives. A project that carries its own
 # layout wins over the generated one. Result in REPLY.
+#
+# The name holds the directory the project sits in as well as the project,
+# because every generated file shares one flat directory. The name alone is not
+# unique: ~/workspace/personal/roboboba and ~/workspace/backups/roboboba are two
+# projects, and with the name alone they would share one session and one tab
+# title. The picker shows a project the same way, as `personal/roboboba`.
 ks_session_path_for() {
     local repo="$1"
     if [[ -f "$repo/$KS_LOCAL_SESSION_NAME" ]]; then
         REPLY="$repo/$KS_LOCAL_SESSION_NAME"
-    else
-        REPLY="$KS_SESSION_DIR/${repo:t}$KS_SESSION_SUFFIX"
+        return 0
     fi
+    # `fd` writes a directory with a trailing slash and the picker passes that
+    # straight in, so the slash goes before the parts are read off the end.
+    while [[ "$repo" == */ ]]; do
+        repo="${repo%/}"
+    done
+    REPLY="$KS_SESSION_DIR/${repo:h:t}$KS_SESSION_NAME_SEP${repo:t}$KS_SESSION_SUFFIX"
 }
 
 # Render the template for a project. Runs once, on the first switch to it.

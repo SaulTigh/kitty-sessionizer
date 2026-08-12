@@ -26,6 +26,11 @@
 : ${KS_SESSION_SUFFIX:=.kitty-session}
 : ${KS_LOCAL_SESSION_NAME:=.kitty-session}
 
+# What joins the directory to the project in a generated name, as in
+# `personal-roboboba`. The name reaches the kitty tab title, so a short mark
+# reads better there than a long one.
+: ${KS_SESSION_NAME_SEP:=-}
+
 # --- State between runs -------------------------------------------------------
 # The current session, and every session that has been opened. kitty does not
 # report the session a tab belongs to, so the tool keeps its own record.
