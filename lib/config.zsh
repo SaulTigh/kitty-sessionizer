@@ -103,6 +103,9 @@ fi
 
 # The project picker. Field 1 is searchable and shown, field 2 is shown only,
 # fields 3 and 4 carry the data the action needs.
+#
+# A {n} placeholder stays bare, because fzf quotes it. A quote around it reaches
+# the command as part of the path, and then no path is found.
 
 : ${KS_FZF_OPTS:="$KS_FZF_THEME \
   --with-nth 1,2 \
@@ -113,7 +116,7 @@ fi
   --header='Controls: [Enter] Select, [Ctrl-C] Abort, [Ctrl-D/U] Scroll preview' \
   --bind='ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up' \
   --prompt='Select workspace >> ' \
-  --preview 'if [ -d \"{4}\" ]; then ${KS_TREE} --gitignore -C -L 2 \"{4}\"; else ${KS_BAT} --color=always --style=numbers \"{4}\"; fi' \
+  --preview 'if [ -d {4} ]; then ${KS_TREE} --gitignore -C -L 2 {4}; else ${KS_BAT} --color=always --style=numbers {4}; fi' \
   --preview-window='right,55%,border-sharp'"}
 
 # The clone-target picker. A row is one plain path, so this picker needs no
@@ -123,5 +126,5 @@ fi
   --border-label='Clone target' \
   --header='Controls: [Enter] Select, [Ctrl-C] Abort' \
   --prompt='Clone into >> ' \
-  --preview '${KS_TREE} --gitignore -C -L 1 \"{}\"' \
+  --preview '${KS_TREE} --gitignore -C -L 1 {}' \
   --preview-window='right,55%,border-sharp'"}
