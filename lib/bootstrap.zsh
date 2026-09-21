@@ -30,15 +30,15 @@ ks_die() {
 # A value with no slash is looked up in PATH and the variable is rewritten to the
 # absolute path, so an override such as KS_FZF=cat also works.
 ks_require_tools() {
-    local var path
+    local var file
     for var in "$@"; do
-        path="${(P)var:-}"
-        [[ -n "$path" ]] || ks_die "$var is not set"
-        if [[ "$path" != */* ]]; then
-            path="${commands[$path]:-}"
-            [[ -n "$path" ]] || ks_die "$var: not found in PATH: ${(P)var}"
-            typeset -g "$var=$path"
+        file="${(P)var:-}"
+        [[ -n "$file" ]] || ks_die "$var is not set"
+        if [[ "$file" != */* ]]; then
+            file="${commands[$file]:-}"
+            [[ -n "$file" ]] || ks_die "$var: not found in PATH: ${(P)var}"
+            typeset -g "$var=$file"
         fi
-        [[ -x "$path" ]] || ks_die "$var is not executable: $path"
+        [[ -x "$file" ]] || ks_die "$var is not executable: $file"
     done
 }
