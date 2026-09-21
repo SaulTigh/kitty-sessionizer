@@ -1,6 +1,7 @@
 # summary: Pick a project and switch to its kitty session
 
 ks_use kitty session picker
+ks_require_tools KS_EDITOR
 
 # Save the layout of the session being left, so returning to it restores the
 # same tabs and panes.
