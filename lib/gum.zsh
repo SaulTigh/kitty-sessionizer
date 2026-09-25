@@ -44,6 +44,22 @@ ks_gum_choose() {
     return 0
 }
 
+# Pick any number of lines out of standard input. Argument: header. Result in
+# the array `reply`, which is empty on cancel and on no pick.
+ks_gum_choose_many() {
+    local out item
+    typeset -ga reply=()
+    out="$("$KS_GUM" choose --header "$1" --no-limit \
+        --padding "$ks_gum_pad")" || out=""
+    [[ -n "$out" ]] || return 0
+    reply=("${(@f)out}")
+    ks_gum_line "${KS_C_LABEL}$1${KS_C_RESET}"
+    for item in "${reply[@]}"; do
+        ks_gum_line "  $item"
+    done
+    return 0
+}
+
 # Ask a yes-or-no question. Arguments: prompt, yes label, no label. Returns 0
 # for yes, and non-zero for no and for cancel.
 ks_gum_confirm() {
