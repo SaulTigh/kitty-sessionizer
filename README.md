@@ -10,6 +10,7 @@ its own session file, so its tabs and panes come back the way you left them.
 | kitty 0.48 or later | `goto_session` and `save_as_session` |
 | fd | find projects |
 | fzf | the picker |
+| gum | the prompts of `clone` |
 | tree | preview a directory |
 | bat | preview a file |
 | git | clone a repository |
@@ -54,11 +55,16 @@ Select a plain file instead of a directory to open it in a new tab in `$KS_EDITO
 `kitty-sessionizer clone` asks four things, in this order:
 
 1. The clone URL. Paste it. An empty answer cancels.
-2. The directory to clone into. The picker lists the `KS_SEARCH_PATHS` that
-   exist, so the clone lands where `open` will find it again.
+2. The directory to clone into. The list holds the `KS_SEARCH_PATHS` that
+   exist, so the clone lands where `open` will find it again. A list of one is
+   taken without a prompt.
 3. The folder name. The repository name is filled in, so press Enter to keep it
    or edit the line to change it.
-4. `[Enter]` to switch to the session of the clone, or any other key to close.
+4. `Open` to switch to the session of the clone, or `Exit` to close.
+
+Esc or Ctrl-C cancels at any prompt. A spinner runs while git clones, and the
+output of git is shown only when the clone fails. The prompts sit in one column
+of `KS_GUM_WIDTH` characters, centred in the overlay.
 
 The action stops when the folder name is already in use. Nothing is deleted and
 nothing is overwritten. Run it again with another name.
@@ -100,6 +106,10 @@ The values you are most likely to change:
 | `KS_TEMPLATE` | `~/.config/kitty/default.kitty-session` |
 | `KS_EDITOR` | `nvim` |
 | `KS_GIT` | `/usr/bin/git` |
+| `KS_GUM` | `/opt/homebrew/bin/gum` |
+
+gum takes its colours from `GUM_*` variables. `lib/config.zsh` exports the
+Jellybeans set, and an exported value of the same name wins.
 
 `KS_SEARCH_PATHS` is an array, and an array cannot cross a process boundary. To
 change the search paths for one run, use the colon-separated `KS_SEARCH_PATH`
@@ -116,6 +126,7 @@ lib/common.zsh          The prelude: loads config and ui, adds small helpers
 lib/ui.zsh              Colours, messages, key and line prompts
 lib/kitty.zsh           Wrappers over `kitten @`
 lib/git.zsh             Wrappers over `git`
+lib/gum.zsh             Wrappers over `gum`: line, choice, confirm, spinner
 lib/session.zsh         Session files and the record of open sessions
 lib/discovery.zsh       Stream the candidate paths
 lib/picker.zsh          fzf options, row format, selection parse
@@ -159,8 +170,9 @@ Run `make check` to parse every script. Then:
 5. Select the same project three times. `/tmp/kitty-active-sessions` holds one
    line for it, not three.
 6. Press `alt+shift+d`. Check the counts, then cancel. Nothing is deleted.
-7. Press `alt+shift+c`. Paste a URL, pick a directory, keep the name, and press
-   Enter at the last prompt. kitty switches to the clone.
+7. Press `alt+shift+c`. Paste a URL, pick a directory, keep the name, and choose
+   `Open` at the last prompt. kitty switches to the clone. Every prompt and
+   every message shares one left margin.
 8. Press `alt+shift+c` again and give the same name. The action reports the
    clash and clones nothing.
 

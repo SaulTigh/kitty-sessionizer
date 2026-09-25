@@ -9,6 +9,7 @@
 
 : ${KS_FD:=/opt/homebrew/bin/fd}
 : ${KS_FZF:=/opt/homebrew/bin/fzf}
+: ${KS_GUM:=/opt/homebrew/bin/gum}
 : ${KS_KITTEN:=/opt/homebrew/bin/kitten}
 : ${KS_TREE:=/opt/homebrew/bin/tree}
 : ${KS_BAT:=/opt/homebrew/bin/bat}
@@ -84,8 +85,42 @@ fi
 : ${KS_C_PROMPT:=$'\e[1;38;2;143;191;220m'}
 : ${KS_C_KEY:=$KS_C_PROMPT}
 
+# The orange gum gives a header. An answered prompt is printed back in it, so
+# the answer looks like the prompt did.
+: ${KS_C_LABEL:=$'\e[38;2;207;106;76m'}
+
 : ${KS_C_DIM:=$'\e[2m'}
 : ${KS_C_RESET:=$'\e[0m'}
+
+# --- gum ----------------------------------------------------------------------
+# The same Jellybeans colours, in the form gum reads. gum takes its colours from
+# the environment, so these are exported and an exported value of the same name
+# wins.
+
+: ${KS_GUM_PROMPT:=">> "}
+
+# Every gum prompt and every line around it sits in one column of this width,
+# centred in the overlay.
+: ${KS_GUM_WIDTH:=64}
+
+export GUM_INPUT_PROMPT_FOREGROUND="${GUM_INPUT_PROMPT_FOREGROUND:-#8fbfdc}"
+export GUM_INPUT_HEADER_FOREGROUND="${GUM_INPUT_HEADER_FOREGROUND:-#cf6a4c}"
+export GUM_INPUT_CURSOR_FOREGROUND="${GUM_INPUT_CURSOR_FOREGROUND:-#cf6a4c}"
+export GUM_INPUT_PLACEHOLDER_FOREGROUND="${GUM_INPUT_PLACEHOLDER_FOREGROUND:-#888888}"
+
+export GUM_CHOOSE_HEADER_FOREGROUND="${GUM_CHOOSE_HEADER_FOREGROUND:-#cf6a4c}"
+export GUM_CHOOSE_CURSOR_FOREGROUND="${GUM_CHOOSE_CURSOR_FOREGROUND:-#cf6a4c}"
+export GUM_CHOOSE_ITEM_FOREGROUND="${GUM_CHOOSE_ITEM_FOREGROUND:-#e8e8e8}"
+export GUM_CHOOSE_SELECTED_FOREGROUND="${GUM_CHOOSE_SELECTED_FOREGROUND:-#ffffff}"
+
+export GUM_CONFIRM_PROMPT_FOREGROUND="${GUM_CONFIRM_PROMPT_FOREGROUND:-#8fbfdc}"
+export GUM_CONFIRM_SELECTED_FOREGROUND="${GUM_CONFIRM_SELECTED_FOREGROUND:-#ffffff}"
+export GUM_CONFIRM_SELECTED_BACKGROUND="${GUM_CONFIRM_SELECTED_BACKGROUND:-#cf6a4c}"
+export GUM_CONFIRM_UNSELECTED_FOREGROUND="${GUM_CONFIRM_UNSELECTED_FOREGROUND:-#e8e8e8}"
+export GUM_CONFIRM_UNSELECTED_BACKGROUND="${GUM_CONFIRM_UNSELECTED_BACKGROUND:-#303030}"
+
+export GUM_SPIN_SPINNER_FOREGROUND="${GUM_SPIN_SPINNER_FOREGROUND:-#fad07a}"
+export GUM_SPIN_TITLE_FOREGROUND="${GUM_SPIN_TITLE_FOREGROUND:-#e8e8e8}"
 
 # --- Picker -------------------------------------------------------------------
 # The look every picker shares. Each picker below adds its own label, prompt and
@@ -117,14 +152,4 @@ fi
   --bind='ctrl-d:preview-half-page-down,ctrl-u:preview-half-page-up' \
   --prompt='Select workspace >> ' \
   --preview 'if [ -d {4} ]; then ${KS_TREE} --gitignore -C -L 2 {4}; else ${KS_BAT} --color=always --style=numbers {4}; fi' \
-  --preview-window='right,55%,border-sharp'"}
-
-# The clone-target picker. A row is one plain path, so this picker needs no
-# delimiter and no hidden field.
-
-: ${KS_FZF_DIR_OPTS:="$KS_FZF_THEME \
-  --border-label='Clone target' \
-  --header='Controls: [Enter] Select, [Ctrl-C] Abort' \
-  --prompt='Clone into >> ' \
-  --preview '${KS_TREE} --gitignore -C -L 1 {}' \
   --preview-window='right,55%,border-sharp'"}
