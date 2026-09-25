@@ -72,10 +72,11 @@ nothing is overwritten. Run it again with another name.
 ## Delete sessions
 
 `kitty-sessionizer delete` lists every saved session with the same markers as
-the picker. The first row, `All`, stands for every session at once.
+the picker.
 
-1. Press `x` or `Tab` to mark a session, or `Ctrl-A` to mark them all. Enter
-   submits the marked rows. Enter alone submits nothing: the cursor highlight is not
+1. Press `x` or `Tab` to mark a session, or `a` or `Ctrl-A` to mark them all.
+   Enter submits the marked rows, and the list of them stays on screen above
+   the confirm. Enter alone submits nothing: the cursor highlight is not
    a mark. Space does not mark a row in gum 2.0.2, see
    https://github.com/charmbracelet/gum/issues/1143.
 2. `Delete` to confirm, or `Cancel`.

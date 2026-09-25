@@ -16,6 +16,10 @@ typeset -g ks_gum_indent="${(l:ks_gum_left:):-}"
 # Print a line at the margin of the column.
 ks_gum_line() { print -r -- "${ks_gum_indent}$*" }
 
+# On Esc, input and choose print one line, "not submitted" or "nothing
+# selected", after they have erased their view. The action prints its own
+# cancel line, so that one goes.
+ks_gum_erase_line() { print -rn -- $'\e[1A\e[J' }
 # gum erases its own view when it exits, so an answered prompt would vanish.
 # Print the header and the answer back, so the answers stay on screen.
 ks_gum_answered() {
@@ -29,7 +33,7 @@ ks_gum_input() {
     setopt local_options extended_glob
     REPLY="$("$KS_GUM" input --header "$1" --value "${2:-}" \
         --placeholder "${3:-}" --prompt "$KS_GUM_PROMPT" \
-        --width "$KS_GUM_WIDTH" --padding "$ks_gum_pad")" || REPLY=""
+        --width "$KS_GUM_WIDTH" --padding "$ks_gum_pad")" || { REPLY=""; ks_gum_erase_line }
     REPLY="${${REPLY##[[:space:]]##}%%[[:space:]]##}"
     [[ -z "$REPLY" ]] || ks_gum_answered "$1" "$REPLY"
     return 0
@@ -39,24 +43,22 @@ ks_gum_input() {
 # A list of one is taken without a prompt.
 ks_gum_choose() {
     REPLY="$("$KS_GUM" choose --header "$1" --select-if-one \
-        --padding "$ks_gum_pad")" || REPLY=""
+        --padding "$ks_gum_pad")" || { REPLY=""; ks_gum_erase_line }
     [[ -z "$REPLY" ]] || ks_gum_answered "$1" "$REPLY"
     return 0
 }
 
 # Pick any number of lines out of standard input. Argument: header. Result in
-# the array `reply`, which is empty on cancel and on no pick.
+# the array `reply`, which is empty on cancel and on no pick. The caller prints
+# the picks back, because gum trims the first line of its input and only the
+# caller still has the rows as they were.
 ks_gum_choose_many() {
-    local out item
+    local out
     typeset -ga reply=()
     out="$("$KS_GUM" choose --header "$1" --no-limit \
-        --padding "$ks_gum_pad")" || out=""
+        --padding "$ks_gum_pad")" || { out=""; ks_gum_erase_line }
     [[ -n "$out" ]] || return 0
     reply=("${(@f)out}")
-    ks_gum_line "${KS_C_LABEL}$1${KS_C_RESET}"
-    for item in "${reply[@]}"; do
-        ks_gum_line "  $item"
-    done
     return 0
 }
 

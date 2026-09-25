@@ -18,13 +18,12 @@ ks_tracker_current
 typeset -g ks_current="$REPLY"
 ks_tracker_active_map
 
-# A row marks a session the way the project picker does. The first row stands
-# for every session at once. The map leads from a row back to its file. gum
-# gives a pick back without its leading spaces, so the key is the row without
-# them too.
-typeset -g ks_all_row="All ($ks_count)"
-typeset -ga ks_rows=("$ks_all_row")
+# A row marks a session the way the project picker does. The map leads from a
+# row back to its file. gum gives a pick back without its leading spaces, so
+# the key is the row without them too.
+typeset -ga ks_rows=()
 typeset -gA ks_row_file=()
+typeset -gA ks_file_row=()
 for ks_file in "${ks_sessions[@]}"; do
     ks_tag="$KS_TAG_NONE"
     if [[ "$ks_file" == "$ks_current" ]]; then
@@ -37,17 +36,15 @@ for ks_file in "${ks_sessions[@]}"; do
     ks_key="${ks_row%%[! ]*}"
     ks_key="${ks_row#$ks_key}"
     ks_row_file[$ks_key]="$ks_file"
+    ks_file_row[$ks_file]="$ks_row"
 done
 
 ks_blank
-# gum lists only x in its own help line, so the keys go above the list.
-ks_gum_line "${KS_C_DIM}Controls: [x/Tab] mark, [Ctrl-A] mark all, [Enter] submit, [Esc] cancel${KS_C_RESET}"
-
 # Enter alone submits nothing in a multi-select: gum takes the cursor row only
 # when the limit is one. Say so, because the cursor highlight looks like a mark.
 print -rl -- "${ks_rows[@]}" | ks_gum_choose_many "Delete sessions"
 if (( ! ${#reply} )); then
-    ks_gum_line "${KS_C_DIM}Nothing marked, nothing deleted.${KS_C_RESET}"
+    ks_gum_line "${KS_C_WARN}✖ Nothing marked, nothing deleted.${KS_C_RESET}"
     ks_gum_line "${KS_C_DIM}  Mark a row with x or Tab, then press Enter.${KS_C_RESET}"
     ks_blank
     ks_pause "${ks_gum_indent}Press any key to close…"
@@ -55,16 +52,18 @@ if (( ! ${#reply} )); then
 fi
 
 typeset -ga ks_targets=()
-if (( ${reply[(Ie)$ks_all_row]} )); then
-    ks_targets=("${ks_sessions[@]}")
-else
-    for ks_row in "${reply[@]}"; do
-        ks_key="${ks_row%%[! ]*}"
-        ks_key="${ks_row#$ks_key}"
-        (( ${+ks_row_file[$ks_key]} )) || ks_die "unknown row: $ks_row"
-        ks_targets+=("${ks_row_file[$ks_key]}")
-    done
-fi
+for ks_row in "${reply[@]}"; do
+    ks_key="${ks_row%%[! ]*}"
+    ks_key="${ks_row#$ks_key}"
+    (( ${+ks_row_file[$ks_key]} )) || ks_die "unknown row: $ks_row"
+    ks_targets+=("${ks_row_file[$ks_key]}")
+done
+
+# The picks, printed back as they stood in the list, so the marks line up.
+ks_gum_line "${KS_C_LABEL}Delete sessions${KS_C_RESET}"
+for ks_file in "${ks_targets[@]}"; do
+    ks_gum_line "  ${ks_file_row[$ks_file]}"
+done
 typeset -gi ks_n=${#ks_targets}
 ks_plural $ks_n session
 typeset -g ks_label="$REPLY"
