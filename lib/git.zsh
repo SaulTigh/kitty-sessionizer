@@ -14,9 +14,3 @@ ks_git_repo_name() {
     REPLY="${url##*[/:]}"
     REPLY="${REPLY%.git}"
 }
-
-# Clone into a destination that does not exist yet. The output stays on the
-# terminal, so the progress meter reaches the overlay.
-ks_git_clone() {
-    "$KS_GIT" clone -- "$1" "$2"
-}
