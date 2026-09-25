@@ -10,7 +10,7 @@ its own session file, so its tabs and panes come back the way you left them.
 | kitty 0.48 or later | `goto_session` and `save_as_session` |
 | fd | find projects |
 | fzf | the picker |
-| gum | the prompts of `clone` |
+| gum | the prompts of `clone` and `delete` |
 | tree | preview a directory |
 | bat | preview a file |
 | git | clone a repository |
@@ -68,6 +68,22 @@ of `KS_GUM_WIDTH` characters, centred in the overlay.
 
 The action stops when the folder name is already in use. Nothing is deleted and
 nothing is overwritten. Run it again with another name.
+
+## Delete sessions
+
+`kitty-sessionizer delete` lists every saved session with the same markers as
+the picker. The first row, `All`, stands for every session at once.
+
+1. Press `x` or `Tab` to mark a session, or `Ctrl-A` to mark them all. Enter
+   submits the marked rows. Enter alone submits nothing: the cursor highlight is not
+   a mark. Space does not mark a row in gum 2.0.2, see
+   https://github.com/charmbracelet/gum/issues/1143.
+2. `Delete` to confirm, or `Cancel`.
+
+The action removes the session files, prints each deleted session, and waits
+for a key. Then it closes the kitty tabs of the deleted sessions that were
+open. When the current session is among them, a plain tab opens and every
+other tab closes, the same as before. Esc or Ctrl-C cancels at any prompt.
 
 ## How a session file is chosen
 
@@ -169,7 +185,8 @@ Run `make check` to parse every script. Then:
    switches to it.
 5. Select the same project three times. `/tmp/kitty-active-sessions` holds one
    line for it, not three.
-6. Press `alt+shift+d`. Check the counts, then cancel. Nothing is deleted.
+6. Press `alt+shift+d`. Mark one session, then choose `Cancel`. Nothing is
+   deleted.
 7. Press `alt+shift+c`. Paste a URL, pick a directory, keep the name, and choose
    `Open` at the last prompt. kitty switches to the clone. Every prompt and
    every message shares one left margin.

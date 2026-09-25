@@ -63,10 +63,12 @@ ks_session_enter() {
     ks_kitty_goto_session "$session"
 }
 
-# Every saved session file, in the array `ks_sessions`.
+# Every saved session file, in the array `ks_sessions`. A project under a
+# dot directory, such as ~/.config/nvim, gives a file that starts with a dot,
+# so the glob has to take dotfiles too.
 ks_session_list() {
     typeset -ga ks_sessions
-    ks_sessions=("$KS_SESSION_DIR"/*"$KS_SESSION_SUFFIX"(N))
+    ks_sessions=("$KS_SESSION_DIR"/*"$KS_SESSION_SUFFIX"(ND))
 }
 
 # --- Trackers -----------------------------------------------------------------
