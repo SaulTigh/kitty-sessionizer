@@ -24,12 +24,44 @@ listen_on unix:/tmp/kitty
 
 ## Install
 
+### Make
+
 1. Run `make install`. It links `bin/kitty-sessionizer` into `~/.local/bin`.
    A previous file of that name is kept as `kitty-sessionizer.pre-refactor`.
 2. Add the key bindings that `make install` prints to `kitty.conf`.
 3. Reload the kitty configuration with `kitten @ load-config`.
 
 Run `make uninstall` to remove the link.
+
+### Nix / Home Manager
+
+Add the input to your flake:
+
+```nix
+inputs.kitty-sessionizer.url = "github:OWNER/kitty-sessionizer-sh";
+```
+
+Then install it and declare the kitty mappings in your Home Manager module
+(pass `inputs` through `extraSpecialArgs` if it is not already available):
+
+```nix
+{ inputs, pkgs, ... }:
+let
+  sessionizer = inputs.kitty-sessionizer.packages.${pkgs.system}.default;
+in
+{
+  home.packages = [ sessionizer ];
+
+  programs.kitty.keybindings = {
+    "alt+shift+p" =
+      ''launch --type=overlay --title "Project Selector" ${sessionizer}/bin/kitty-sessionizer open'';
+    "alt+shift+d" =
+      ''launch --type=overlay --title "Delete Sessions" ${sessionizer}/bin/kitty-sessionizer delete'';
+    "alt+shift+c" =
+      ''launch --type=overlay --title "Clone Repository" ${sessionizer}/bin/kitty-sessionizer clone'';
+  };
+}
+```
 
 ## Use
 
