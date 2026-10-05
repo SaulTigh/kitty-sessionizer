@@ -83,8 +83,15 @@ the picker.
 
 The action removes the session files, prints each deleted session, and waits
 for a key. Then it closes the kitty tabs of the deleted sessions that were
-open. When the current session is among them, a plain tab opens and every
-other tab closes, the same as before. Esc or Ctrl-C cancels at any prompt.
+open. Esc or Ctrl-C cancels at any prompt up to here.
+
+When the current session is among the deleted ones, what happens next depends
+on the other open sessions:
+
+- Several are open: a `Switch to session` prompt lists them. Pick one. Esc
+  asks again, because the tab you are in is about to close.
+- One is open: kitty switches to it without a prompt.
+- None is open: a plain tab opens and every other tab closes.
 
 ## How a session file is chosen
 

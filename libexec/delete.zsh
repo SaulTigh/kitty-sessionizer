@@ -103,22 +103,56 @@ ks_gum_line "${KS_C_OK}✔ Deleted $ks_n $ks_label.${KS_C_RESET}"
 for ks_file in "${ks_targets[@]}"; do
     ks_gum_line "${KS_C_DIM}  ✖ ${ks_file:t:r}${KS_C_RESET}"
 done
+
+# When the current session goes, the user lands in one of the sessions that
+# stayed open. The prompt ends only with a pick: the tab the overlay sits in is
+# about to close, so there is nothing to cancel back to. A list of one is taken
+# without a prompt.
+typeset -g ks_next=""
+if (( ks_current_gone )); then
+    typeset -ga ks_open_rows=()
+    typeset -gA ks_open_row_file=()
+    for ks_file in "${ks_sessions[@]}"; do
+        (( ${+ks_active_map[$ks_file]} )) || continue
+        (( ${+ks_target_set[$ks_file]} )) && continue
+        ks_open_rows+=("${ks_file:t:r}")
+        ks_open_row_file[${ks_file:t:r}]="$ks_file"
+    done
+    if (( ${#ks_open_rows} )); then
+        ks_blank
+        while [[ -z "$ks_next" ]]; do
+            print -rl -- "${ks_open_rows[@]}" | ks_gum_choose "Switch to session"
+            [[ -n "$REPLY" ]] && ks_next="${ks_open_row_file[$REPLY]}"
+        done
+    fi
+fi
+
 ks_blank
 ks_pause "${ks_gum_indent}Press any key to close…"
 
 # The tabs go after the pause, because the overlay sits in one of them.
 #
-# When the current session goes, nothing is left to return to, so one plain
-# tab opens and every other tab closes. Otherwise only the tabs of the deleted
-# sessions close. Match on the session, not on the title: kitty names a
-# session after its file, so the match is exact.
+# When the current session goes and no open session is left, one plain tab
+# opens and every other tab closes. Otherwise the picked session takes focus
+# first, and only the tabs of the deleted sessions close. Match on the session,
+# not on the title: kitty names a session after its file, so the match is
+# exact. The current session goes last, because its tab holds the overlay.
 if (( ks_current_gone )); then
-    ks_kitty_new_tab "$HOME"
-    ks_kitty_close_tabs "not state:active"
-    return 0
+    if [[ -z "$ks_next" ]]; then
+        ks_kitty_new_tab "$HOME"
+        ks_kitty_close_tabs "not state:active"
+        return 0
+    fi
+    ks_tracker_set_current "$ks_next"
+    ks_kitty_goto_session "$ks_next"
 fi
 for ks_file in "${ks_targets[@]}"; do
+    [[ "$ks_file" == "$ks_current" ]] && continue
     (( ${+ks_active_map[$ks_file]} )) || continue
     ks_kitty_match_pattern "${ks_file:t:r}"
     ks_kitty_close_tabs "session:^${REPLY}\$"
 done
+if (( ks_current_gone )); then
+    ks_kitty_match_pattern "${ks_current:t:r}"
+    ks_kitty_close_tabs "session:^${REPLY}\$"
+fi
