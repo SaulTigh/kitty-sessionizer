@@ -60,7 +60,6 @@ elif (( ! ${#KS_SEARCH_PATHS} )); then
         ~/workspace/personal
         ~/workspace/backups
         ~/.config
-        ~/.local/bin
     )
 fi
 

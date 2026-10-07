@@ -123,7 +123,7 @@ The values you are most likely to change:
 
 | Variable | Default |
 |---|---|
-| `KS_SEARCH_PATHS` | `~/workspace/nc ~/workspace/personal ~/workspace/backups ~/.config ~/.local/bin` |
+| `KS_SEARCH_PATHS` | `~/workspace/nc ~/workspace/personal ~/workspace/backups ~/.config` |
 | `KS_DEPTH` | `1` |
 | `KS_HOME_FILE_PATH` | `~` |
 | `KS_SESSION_DIR` | `~/.local/share/kitty/sessions` |
