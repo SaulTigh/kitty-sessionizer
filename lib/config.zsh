@@ -33,11 +33,12 @@
 : ${KS_SESSION_NAME_SEP:=-}
 
 # --- State between runs -------------------------------------------------------
-# The current session, and every session that has been opened, newest first.
-# kitty does not report the order the sessions were used in, so the tool keeps
-# its own record.
+# The current session, the session before it, and every session that has been
+# opened, newest first. kitty does not report the order the sessions were used
+# in, so the tool keeps its own record.
 
 : ${KS_CURRENT_TRACKER:=/tmp/kitty-current-session}
+: ${KS_PREVIOUS_TRACKER:=/tmp/kitty-previous-session}
 : ${KS_ACTIVE_TRACKER:=/tmp/kitty-active-sessions}
 
 # --- Discovery ----------------------------------------------------------------
