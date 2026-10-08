@@ -36,10 +36,11 @@ listen_on unix:/tmp/kitty
    map alt+shift+c launch --type=overlay --title "Clone Repository" /bin/zsh ~/.local/bin/kitty-sessionizer clone
    map alt+shift+[ remote_control_script /bin/zsh ~/.local/bin/kitty-sessionizer prev
    map alt+shift+] remote_control_script /bin/zsh ~/.local/bin/kitty-sessionizer next
+   map alt+shift+backslash remote_control_script /bin/zsh ~/.local/bin/kitty-sessionizer last
    ```
 
    `open`, `delete` and `clone` ask questions, so they run in an overlay.
-   `prev` and `next` ask nothing, so they run through `remote_control_script`,
+   `prev`, `next` and `last` ask nothing, so they run through `remote_control_script`,
    which starts the tool in the background with remote control allowed.
 3. Reload the kitty configuration with `kitten @ load-config`.
 
@@ -84,7 +85,7 @@ The module installs the tool and adds the five key bindings to
 | `template` | `KS_TEMPLATE` | `~/.config/kitty/default.kitty-session` |
 | `environment` | any other `KS_*` variable | `{ }` |
 | `kitty.enable` | the key bindings | `true` |
-| `kitty.keys.<action>` | the key of `open`, `delete`, `clone`, `prev` or `next` | the keys under [Make](#make) |
+| `kitty.keys.<action>` | the key of `open`, `delete`, `clone`, `prev`, `next` or `last` | the keys under [Make](#make) |
 
 A leading `~` in `searchPaths` expands to the home directory. The module bakes
 each value into a wrapper, so it works when kitty starts the tool with a short
@@ -99,6 +100,7 @@ kitty-sessionizer clone     Clone a git repository into a workspace directory
 kitty-sessionizer delete    Delete saved kitty sessions
 kitty-sessionizer prev      Switch to the session used before the current one
 kitty-sessionizer next      Switch to the session used after the current one
+kitty-sessionizer last      Switch back to the session you were in before the current one
 kitty-sessionizer help      List the actions
 ```
 
@@ -169,6 +171,12 @@ A `prev` or `next` move does not change the order. It only records where you
 are. If a move counted as a use, the target would go to the top of the list
 and the second press would come straight back. A pick in the project picker,
 `clone` or `delete` moves the target to the top.
+
+`last` switches back to the session you were in before the current one. Press
+it again to return. Every move counts, so after `prev` from C to B and `prev`
+again to A, `last` goes to B. Like `prev` and `next`, it does not change the
+order. It does nothing when the previous session is deleted or has no window
+open.
 
 ## How a session file is chosen
 
@@ -254,9 +262,10 @@ were used in, so the tool keeps its own record:
 | File | Holds |
 |---|---|
 | `/tmp/kitty-current-session` | the session you are in |
+| `/tmp/kitty-previous-session` | the session you were in before it |
 | `/tmp/kitty-active-sessions` | every session that has been opened, newest first |
 
-Both are cleared by `kitty-sessionizer delete` when you delete all sessions.
+All three are cleared by `kitty-sessionizer delete` when you delete all sessions.
 
 ## Verify a change
 
@@ -275,6 +284,8 @@ Run `make check` to parse every script. Then:
    `/tmp/kitty-active-sessions` keeps the order it had.
 7. Close every tab of the third project by hand. Press `alt+shift+[` from the
    first project. kitty lands in the second one and skips the third.
+   Press `alt+shift+backslash`. kitty goes back to the first project. Press it
+   again. kitty returns to the second one.
 8. Press `alt+shift+d`. Mark one session, then choose `Cancel`. Nothing is
    deleted.
 9. Press `alt+shift+c`. Paste a URL, pick a directory, keep the name, and choose
@@ -288,6 +299,7 @@ To try an action against throwaway state, point the variables somewhere else:
 ```zsh
 KS_SESSION_DIR=/tmp/ks-test \
 KS_CURRENT_TRACKER=/tmp/ks-current \
+KS_PREVIOUS_TRACKER=/tmp/ks-previous \
 KS_ACTIVE_TRACKER=/tmp/ks-active \
 KS_SEARCH_PATH=/tmp/ks-roots \
 KS_HOME_FILE_PATH=/tmp/ks-roots \

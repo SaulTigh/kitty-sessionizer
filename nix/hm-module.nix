@@ -63,6 +63,7 @@ let
     clone = overlay "Clone Repository" "clone";
     prev = background "prev";
     next = background "next";
+    last = background "last";
   };
 
   keyOption =
@@ -160,6 +161,7 @@ in
         clone = keyOption "clone" "alt+shift+c";
         prev = keyOption "prev" "alt+shift+[";
         next = keyOption "next" "alt+shift+]";
+        last = keyOption "last" "alt+shift+backslash";
       };
     };
   };

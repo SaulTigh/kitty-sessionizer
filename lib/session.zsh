@@ -83,7 +83,24 @@ ks_tracker_current() {
     return 0
 }
 
-ks_tracker_set_current() { print -r -- "$1" > "$KS_CURRENT_TRACKER" }
+# Record a move to a session. The session being left becomes the previous one,
+# so every action that moves keeps `last` up to date. A move to the session the
+# user is already in keeps the previous one.
+ks_tracker_set_current() {
+    ks_tracker_current
+    if [[ -n "$REPLY" && "$REPLY" != "$1" ]]; then
+        print -r -- "$REPLY" > "$KS_PREVIOUS_TRACKER"
+    fi
+    print -r -- "$1" > "$KS_CURRENT_TRACKER"
+}
+
+# The session the user was in before the current one, in REPLY. Empty when
+# there is none.
+ks_tracker_previous() {
+    REPLY=""
+    [[ -r "$KS_PREVIOUS_TRACKER" ]] && REPLY="$(<"$KS_PREVIOUS_TRACKER")"
+    return 0
+}
 
 # Put a session at the top of the open list. The list holds each session once,
 # so a session that is already there moves up instead of doubling.
@@ -149,7 +166,25 @@ ks_session_cycle() {
     ks_kitty_goto_session "$target"
 }
 
-ks_tracker_clear() { rm -f "$KS_CURRENT_TRACKER" "$KS_ACTIVE_TRACKER" }
+# Go back to the session the user was in before the current one. A second press
+# returns, because the move records the session it leaves as the previous one.
+# Like a cycle, the move leaves the order alone. Nothing happens when the
+# previous session is gone or has no window open.
+ks_session_last() {
+    local current target
+    ks_tracker_current
+    current="$REPLY"
+    ks_tracker_previous
+    target="$REPLY"
+    [[ -n "$target" && "$target" != "$current" && -f "$target" ]] || return 0
+    ks_kitty_live_session_names
+    (( ${reply[(Ie)${target:t:r}]} )) || return 0
+    ks_kitty_save_session "$current"
+    ks_tracker_set_current "$target"
+    ks_kitty_goto_session "$target"
+}
+
+ks_tracker_clear() { rm -f "$KS_CURRENT_TRACKER" "$KS_PREVIOUS_TRACKER" "$KS_ACTIVE_TRACKER" }
 
 # Open sessions as a set, in `ks_active_map`. A record whose file has gone is
 # dropped, so a deleted session stops showing the open marker.
