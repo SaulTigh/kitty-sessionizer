@@ -19,6 +19,27 @@ ks_kitty_save_session() {
 
 ks_kitty_goto_session() { ks_kitty action goto_session "$1" }
 
+# The names of the sessions that have a window open, in `reply`. kitty names a
+# session after its file, so a name matches `${file:t:r}`. The JSON is read by
+# line, because `ls` prints one field per line and a JSON parser would be one
+# more tool to require.
+ks_kitty_live_session_names() {
+    typeset -ga reply=()
+    local out line name
+    local -A seen=()
+    out="$(ks_kitty ls)"
+    for line in "${(@f)out}"; do
+        [[ "$line" == *'"session_name": "'* ]] || continue
+        name="${line#*\"session_name\": \"}"
+        name="${name%\"*}"
+        [[ -n "$name" ]] || continue
+        (( ${+seen[$name]} )) && continue
+        seen[$name]=1
+        reply+=("$name")
+    done
+    return 0
+}
+
 ks_kitty_new_tab() {
     local cwd="$1"
     shift

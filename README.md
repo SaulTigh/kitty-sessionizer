@@ -26,7 +26,19 @@ listen_on unix:/tmp/kitty
 
 1. Run `make install`. It links `bin/kitty-sessionizer` into `~/.local/bin`.
    A previous file of that name is kept as `kitty-sessionizer.pre-refactor`.
-2. Add the key bindings that `make install` prints to `kitty.conf`.
+2. Add the key bindings that `make install` prints to `kitty.conf`:
+
+   ```
+   map alt+shift+p launch --type=overlay --title "Project Selector" /bin/zsh ~/.local/bin/kitty-sessionizer open
+   map alt+shift+d launch --type=overlay --title "Delete Sessions" /bin/zsh ~/.local/bin/kitty-sessionizer delete
+   map alt+shift+c launch --type=overlay --title "Clone Repository" /bin/zsh ~/.local/bin/kitty-sessionizer clone
+   map alt+shift+[ remote_control_script /bin/zsh ~/.local/bin/kitty-sessionizer prev
+   map alt+shift+] remote_control_script /bin/zsh ~/.local/bin/kitty-sessionizer next
+   ```
+
+   `open`, `delete` and `clone` ask questions, so they run in an overlay.
+   `prev` and `next` ask nothing, so they run through `remote_control_script`,
+   which starts the tool in the background with remote control allowed.
 3. Reload the kitty configuration with `kitten @ load-config`.
 
 Run `make uninstall` to remove the link.
@@ -37,6 +49,8 @@ Run `make uninstall` to remove the link.
 kitty-sessionizer open      Pick a project and switch to its kitty session
 kitty-sessionizer clone     Clone a git repository into a workspace directory
 kitty-sessionizer delete    Delete saved kitty sessions
+kitty-sessionizer prev      Switch to the session used before the current one
+kitty-sessionizer next      Switch to the session used after the current one
 kitty-sessionizer help      List the actions
 ```
 
@@ -92,6 +106,21 @@ on the other open sessions:
   asks again, because the tab you are in is about to close.
 - One is open: kitty switches to it without a prompt.
 - None is open: a plain tab opens and every other tab closes.
+
+## Move between open sessions
+
+`prev` and `next` walk the open sessions in the order you used them. `prev`
+goes to an older session, `next` to a newer one, and both wrap at the ends.
+The bindings run the tool with `remote_control_script`, so no window opens.
+
+Only a session with a window open counts. A session whose tabs you closed by
+hand drops out of the cycle instead of reopening. With fewer than two open
+sessions the action does nothing.
+
+A `prev` or `next` move does not change the order. It only records where you
+are. If a move counted as a use, the target would go to the top of the list
+and the second press would come straight back. A pick in the project picker,
+`clone` or `delete` moves the target to the top.
 
 ## How a session file is chosen
 
@@ -171,13 +200,13 @@ or a `kitten` command goes in its own module.
 
 ## State
 
-kitty does not report which session a tab belongs to, so the tool keeps its own
-record:
+kitty reports which session a window belongs to, but not the order the sessions
+were used in, so the tool keeps its own record:
 
 | File | Holds |
 |---|---|
 | `/tmp/kitty-current-session` | the session you are in |
-| `/tmp/kitty-active-sessions` | every session that has been opened |
+| `/tmp/kitty-active-sessions` | every session that has been opened, newest first |
 
 Both are cleared by `kitty-sessionizer delete` when you delete all sessions.
 
@@ -192,14 +221,19 @@ Run `make check` to parse every script. Then:
 4. Select a project with no session. A file appears in `KS_SESSION_DIR` and kitty
    switches to it.
 5. Select the same project three times. `/tmp/kitty-active-sessions` holds one
-   line for it, not three.
-6. Press `alt+shift+d`. Mark one session, then choose `Cancel`. Nothing is
+   line for it, not three, and the line is the first one.
+6. Open three projects in turn. Press `alt+shift+[` twice. kitty lands in the
+   first project. Press `alt+shift+]` once. kitty lands in the second one.
+   `/tmp/kitty-active-sessions` keeps the order it had.
+7. Close every tab of the third project by hand. Press `alt+shift+[` from the
+   first project. kitty lands in the second one and skips the third.
+8. Press `alt+shift+d`. Mark one session, then choose `Cancel`. Nothing is
    deleted.
-7. Press `alt+shift+c`. Paste a URL, pick a directory, keep the name, and choose
+9. Press `alt+shift+c`. Paste a URL, pick a directory, keep the name, and choose
    `Open` at the last prompt. kitty switches to the clone. Every prompt and
    every message shares one left margin.
-8. Press `alt+shift+c` again and give the same name. The action reports the
-   clash and clones nothing.
+10. Press `alt+shift+c` again and give the same name. The action reports the
+    clash and clones nothing.
 
 To try an action against throwaway state, point the variables somewhere else:
 

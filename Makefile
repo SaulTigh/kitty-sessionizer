@@ -24,6 +24,8 @@ install: ## Link the dispatcher into PREFIX/bin
 	@echo '  map alt+shift+p launch --type=overlay --title "Project Selector" /bin/zsh $(TARGET) open'
 	@echo '  map alt+shift+d launch --type=overlay --title "Delete Sessions" /bin/zsh $(TARGET) delete'
 	@echo '  map alt+shift+c launch --type=overlay --title "Clone Repository" /bin/zsh $(TARGET) clone'
+	@echo '  map alt+shift+[ remote_control_script /bin/zsh $(TARGET) prev'
+	@echo '  map alt+shift+] remote_control_script /bin/zsh $(TARGET) next'
 
 .PHONY: uninstall
 uninstall: ## Remove the link from PREFIX/bin

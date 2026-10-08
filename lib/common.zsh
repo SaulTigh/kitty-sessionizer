@@ -29,17 +29,6 @@ ks_write_lines() {
     fi
 }
 
-# Append a line only when the file does not hold it already. Without this the
-# tracker files gain a duplicate on every switch and never shrink.
-ks_append_unique() {
-    local file="$1" value="$2" line
-    ks_read_lines "$file"
-    for line in "${reply[@]}"; do
-        [[ "$line" == "$value" ]] && return 0
-    done
-    print -r -- "$value" >> "$file"
-}
-
 # Pad a string on the right to a fixed width. Result in REPLY.
 ks_pad() {
     local -i width=$1
