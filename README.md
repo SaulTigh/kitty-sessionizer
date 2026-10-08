@@ -53,27 +53,43 @@ Add the input to your flake:
 inputs.kitty-sessionizer.url = "github:OWNER/kitty-sessionizer-sh";
 ```
 
-Then install it and declare the kitty mappings in your Home Manager module
-(pass `inputs` through `extraSpecialArgs` if it is not already available):
+Then import the Home Manager module and enable it (pass `inputs` through
+`extraSpecialArgs` if it is not already available):
 
 ```nix
-{ inputs, pkgs, ... }:
-let
-  sessionizer = inputs.kitty-sessionizer.packages.${pkgs.system}.default;
-in
+{ inputs, ... }:
 {
-  home.packages = [ sessionizer ];
+  imports = [ inputs.kitty-sessionizer.homeManagerModules.default ];
 
-  programs.kitty.keybindings = {
-    "alt+shift+p" =
-      ''launch --type=overlay --title "Project Selector" ${sessionizer}/bin/kitty-sessionizer open'';
-    "alt+shift+d" =
-      ''launch --type=overlay --title "Delete Sessions" ${sessionizer}/bin/kitty-sessionizer delete'';
-    "alt+shift+c" =
-      ''launch --type=overlay --title "Clone Repository" ${sessionizer}/bin/kitty-sessionizer clone'';
+  programs.kitty-sessionizer = {
+    enable = true;
+    searchPaths = [
+      "~/workspace/personal"
+      "~/.config"
+    ];
   };
 }
 ```
+
+The module installs the tool and adds the five key bindings to
+`programs.kitty.keybindings`. kitty still needs remote control, see
+[Requirements](#requirements).
+
+| Option | Sets | Default |
+|---|---|---|
+| `searchPaths` | `KS_SEARCH_PATH` | the list in `lib/config.zsh` |
+| `depth` | `KS_DEPTH` | `1` |
+| `editor` | `KS_EDITOR` | `nvim` |
+| `sessionDir` | `KS_SESSION_DIR` | `~/.local/share/kitty/sessions` |
+| `template` | `KS_TEMPLATE` | `~/.config/kitty/default.kitty-session` |
+| `environment` | any other `KS_*` variable | `{ }` |
+| `kitty.enable` | the key bindings | `true` |
+| `kitty.keys.<action>` | the key of `open`, `delete`, `clone`, `prev` or `next` | the keys under [Make](#make) |
+
+A leading `~` in `searchPaths` expands to the home directory. The module bakes
+each value into a wrapper, so it works when kitty starts the tool with a short
+environment. An exported variable of the same name still wins. Set a key to
+`null` to skip that binding.
 
 ## Use
 
