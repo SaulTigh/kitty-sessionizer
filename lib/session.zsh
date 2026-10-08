@@ -72,8 +72,9 @@ ks_session_list() {
 }
 
 # --- Trackers -----------------------------------------------------------------
-# kitty does not report the session a tab belongs to, so the tool records the
-# current session and every session it has opened.
+# kitty reports the session of a window, but not the order the sessions were
+# used in, so the tool records the current session and every session it has
+# opened, newest first.
 
 # The session the user is in now, in REPLY. Empty when there is none.
 ks_tracker_current() {
@@ -84,7 +85,69 @@ ks_tracker_current() {
 
 ks_tracker_set_current() { print -r -- "$1" > "$KS_CURRENT_TRACKER" }
 
-ks_tracker_add_active() { ks_append_unique "$KS_ACTIVE_TRACKER" "$1" }
+# Put a session at the top of the open list. The list holds each session once,
+# so a session that is already there moves up instead of doubling.
+ks_tracker_add_active() {
+    local line
+    local -a kept=()
+    ks_read_lines "$KS_ACTIVE_TRACKER"
+    for line in "${reply[@]}"; do
+        [[ "$line" == "$1" ]] || kept+=("$line")
+    done
+    ks_write_lines "$KS_ACTIVE_TRACKER" "$1" "${kept[@]}"
+}
+
+# The session `step` places away from `current` in the open list, in REPLY. A
+# step of 1 goes to an older session, -1 to a newer one, and both wrap. Only a
+# session with a window open counts, so a session closed by hand drops out of
+# the cycle instead of reopening. Empty when there is nothing to move to.
+#
+# When `current` is not in the list, 1 gives the newest session and -1 the
+# oldest, the same two the steps would reach from just past either end.
+ks_tracker_cycle_target() {
+    local -i step=$1
+    local current="$2" line
+    local -a open=()
+    local -A live=()
+    REPLY=""
+
+    ks_kitty_live_session_names
+    for line in "${reply[@]}"; do
+        live[$line]=1
+    done
+
+    ks_read_lines "$KS_ACTIVE_TRACKER"
+    for line in "${reply[@]}"; do
+        [[ -f "$line" ]] || continue
+        (( ${+live[${line:t:r}]} )) || continue
+        open+=("$line")
+    done
+    local -i n=${#open}
+    (( n >= 2 )) || return 0
+
+    local -i i=${open[(Ie)$current]}
+    if (( i == 0 )); then
+        (( step > 0 )) && i=0 || i=1
+    fi
+    REPLY="${open[(i - 1 + step + n) % n + 1]}"
+    return 0
+}
+
+# Move through the open sessions in the order they were used. The move records
+# the new current session but leaves the order alone. A move that counted as a
+# use would put the target on top, and the second press would come straight
+# back instead of going on.
+ks_session_cycle() {
+    local current target
+    ks_tracker_current
+    current="$REPLY"
+    ks_tracker_cycle_target "$1" "$current"
+    target="$REPLY"
+    [[ -n "$target" ]] || return 0
+    ks_kitty_save_session "$current"
+    ks_tracker_set_current "$target"
+    ks_kitty_goto_session "$target"
+}
 
 ks_tracker_clear() { rm -f "$KS_CURRENT_TRACKER" "$KS_ACTIVE_TRACKER" }
 
