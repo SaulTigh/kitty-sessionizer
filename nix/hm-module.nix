@@ -54,6 +54,8 @@ let
 
   bin = lib.getExe wrapped;
 
+  watcher = "${cfg.package}/share/kitty-sessionizer/kitty/autosave.py";
+
   overlay = title: action: ''launch --type=overlay --title "${title}" ${bin} ${action}'';
   background = action: "remote_control_script ${bin} ${action}";
 
@@ -155,6 +157,25 @@ in
         description = "Whether to add the key bindings to `programs.kitty`.";
       };
 
+      autosave = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Whether to load the watcher that saves each open session on every
+          change, so a session comes back as it was after kitty is killed.
+        '';
+      };
+
+      listenOn = mkOption {
+        type = types.nullOr types.str;
+        default = "unix:@kitty";
+        description = ''
+          Socket kitty listens on for remote control. The default is an abstract
+          socket, which leaves no file behind. Set to null to leave
+          `listen_on` alone.
+        '';
+      };
+
       keys = {
         open = keyOption "open" "alt+shift+p";
         delete = keyOption "delete" "alt+shift+d";
@@ -173,6 +194,11 @@ in
       lib.mapAttrs' (action: key: lib.nameValuePair key actions.${action}) (
         lib.filterAttrs (_: key: key != null) cfg.kitty.keys
       )
+    );
+
+    programs.kitty.settings = mkIf cfg.kitty.enable (
+      lib.optionalAttrs cfg.kitty.autosave { watcher = lib.mkDefault watcher; }
+      // lib.optionalAttrs (cfg.kitty.listenOn != null) { listen_on = lib.mkDefault cfg.kitty.listenOn; }
     );
   };
 }

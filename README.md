@@ -22,6 +22,17 @@ allow_remote_control yes
 listen_on unix:/tmp/kitty
 ```
 
+kitty adds its pid to the socket name, so this gives `/tmp/kitty-<pid>`. kitty
+leaves the file behind when it is killed. On Linux, `listen_on unix:@kitty`
+uses an abstract socket, which leaves no file. The Home Manager module sets it.
+
+To keep sessions across a kitty restart, `kitty.conf` also needs the watcher,
+see [Keep sessions across restarts](#keep-sessions-across-restarts):
+
+```
+watcher /path/to/kitty-sessionizer/kitty/autosave.py
+```
+
 ## Install
 
 ### Make
@@ -37,6 +48,7 @@ listen_on unix:/tmp/kitty
    map alt+shift+[ remote_control_script /bin/zsh ~/.local/bin/kitty-sessionizer prev
    map alt+shift+] remote_control_script /bin/zsh ~/.local/bin/kitty-sessionizer next
    map alt+shift+backslash remote_control_script /bin/zsh ~/.local/bin/kitty-sessionizer last
+   watcher /path/to/kitty-sessionizer/kitty/autosave.py
    ```
 
    `open`, `delete` and `clone` ask questions, so they run in an overlay.
@@ -72,9 +84,11 @@ Then import the Home Manager module and enable it (pass `inputs` through
 }
 ```
 
-The module installs the tool and adds the five key bindings to
-`programs.kitty.keybindings`. kitty still needs remote control, see
-[Requirements](#requirements).
+The module installs the tool and adds the six key bindings to
+`programs.kitty.keybindings`. It also sets `watcher` and `listen_on` in
+`programs.kitty.settings`. Both use `mkDefault`, so a value of your own wins.
+A `listen_on` you set yourself therefore replaces `unix:@kitty`. kitty still
+needs `allow_remote_control`, see [Requirements](#requirements).
 
 | Option | Sets | Default |
 |---|---|---|
@@ -85,6 +99,8 @@ The module installs the tool and adds the five key bindings to
 | `template` | `KS_TEMPLATE` | `~/.config/kitty/default.kitty-session` |
 | `environment` | any other `KS_*` variable | `{ }` |
 | `kitty.enable` | the key bindings | `true` |
+| `kitty.autosave` | load the watcher that keeps sessions across restarts | `true` |
+| `kitty.listenOn` | `listen_on`, or `null` to leave it alone | `unix:@kitty` |
 | `kitty.keys.<action>` | the key of `open`, `delete`, `clone`, `prev`, `next` or `last` | the keys under [Make](#make) |
 
 A leading `~` in `searchPaths` expands to the home directory. The module bakes
@@ -178,6 +194,44 @@ again to A, `last` goes to B. Like `prev` and `next`, it does not change the
 order. It does nothing when the previous session is deleted or has no window
 open.
 
+## Keep sessions across restarts
+
+Close kitty and open it again. No session shows as open in the picker. Pick
+one, and it comes back with the tabs, panes, directories and programs it had.
+
+`kitty/autosave.py` is a kitty watcher that keeps each session file up to date.
+kitty runs no hook when it is killed, so a save on exit would not run. The
+watcher saves after every change instead: a tab opens, closes or changes its
+title, or the focus moves. A burst of changes gives one save a second later.
+
+The watcher saves a session only when all of these hold:
+
+- the tool opened it in this kitty process;
+- kitty loaded it from that same file;
+- it has at least one window;
+- kitty is not quitting.
+
+The tool also saves the session you leave, as before. That save runs only when
+kitty is in the session the tool has on record. A stale record can no longer
+overwrite a session file with the windows of another session.
+
+A program comes back as a new process. kitty starts `claude` again, but not the
+conversation you had in it.
+
+## Default tabs come back
+
+Every switch to a session reopens the tabs of the template that the session
+lacks. A tab you close by accident, such as zsh, is back on your next switch.
+This holds for every way to switch: the picker, `prev`, `next`, `last` and
+`delete`. It also holds when a session comes back from its file after a
+restart, or after you closed all of its tabs.
+
+- A tab is matched by its title, the `new_tab` line of the template.
+- A reopened tab goes to the end of the tab bar. The focus stays where it was.
+- A tab you add yourself is not a default tab. Once you close it, it stays
+  closed.
+- A project that carries its own `.kitty-session` file has no default tabs.
+
 ## How a session file is chosen
 
 1. If the project holds a `.kitty-session` file, that file is used.
@@ -239,6 +293,8 @@ lib/gum.zsh             Wrappers over `gum`: line, choice, confirm, spinner
 lib/session.zsh         Session files and the record of open sessions
 lib/discovery.zsh       Stream the candidate paths
 lib/picker.zsh          fzf options, row format, selection parse
+kitty/autosave.py       kitty watcher that saves open sessions
+tests/                  Tests, run with `make test`
 ```
 
 ## Add an action
@@ -257,19 +313,30 @@ or a `kitten` command goes in its own module.
 ## State
 
 kitty reports which session a window belongs to, but not the order the sessions
-were used in, so the tool keeps its own record:
+were used in, so the tool keeps its own record. The record belongs to one kitty
+process. It lives in `$XDG_RUNTIME_DIR/kitty-sessionizer/<kitty pid>/`, or under
+`/tmp` when `XDG_RUNTIME_DIR` is not set. A restarted kitty starts with an empty
+record, and the system clears the directory on logout.
 
 | File | Holds |
 |---|---|
-| `/tmp/kitty-current-session` | the session you are in |
-| `/tmp/kitty-previous-session` | the session you were in before it |
-| `/tmp/kitty-active-sessions` | every session that has been opened, newest first |
+| `current-session` | the session you are in |
+| `previous-session` | the session you were in before it |
+| `active-sessions` | every session opened in this kitty, newest first |
+| `session-projects` | the project of each session, to render its default tabs |
 
-All three are cleared by `kitty-sessionizer delete` when you delete all sessions.
+The open marker does not trust the record alone. A session shows as open only
+while kitty has a window in it.
+
+`kitty-sessionizer delete` clears the record when you delete all sessions.
+`KS_STATE_ROOT` moves the record. The watcher reads it too, so set it in the
+environment kitty starts with.
 
 ## Verify a change
 
-Run `make check` to parse every script. Then:
+Run `make test`. It parses every script, then runs the tests of the session
+record and of the watcher. The watcher tests run in the Python of kitty, so
+kitty must be in `PATH`. Then:
 
 1. `kitty-sessionizer help` lists the actions.
 2. `kitty-sessionizer bogus` prints an error and exits non-zero.
@@ -277,11 +344,11 @@ Run `make check` to parse every script. Then:
    for a directory and the file content for a file.
 4. Select a project with no session. A file appears in `KS_SESSION_DIR` and kitty
    switches to it.
-5. Select the same project three times. `/tmp/kitty-active-sessions` holds one
+5. Select the same project three times. `active-sessions` holds one
    line for it, not three, and the line is the first one.
 6. Open three projects in turn. Press `alt+shift+[` twice. kitty lands in the
    first project. Press `alt+shift+]` once. kitty lands in the second one.
-   `/tmp/kitty-active-sessions` keeps the order it had.
+   `active-sessions` keeps the order it had.
 7. Close every tab of the third project by hand. Press `alt+shift+[` from the
    first project. kitty lands in the second one and skips the third.
    Press `alt+shift+backslash`. kitty goes back to the first project. Press it
@@ -293,14 +360,16 @@ Run `make check` to parse every script. Then:
    every message shares one left margin.
 10. Press `alt+shift+c` again and give the same name. The action reports the
     clash and clones nothing.
+11. Open two projects. Add a tab in the second one. Kill kitty with
+    `kill -9`. Start kitty and press `alt+shift+p`. No row shows `▶`. Pick the
+    second project. It comes back with the new tab. The first project comes
+    back as it was.
 
 To try an action against throwaway state, point the variables somewhere else:
 
 ```zsh
 KS_SESSION_DIR=/tmp/ks-test \
-KS_CURRENT_TRACKER=/tmp/ks-current \
-KS_PREVIOUS_TRACKER=/tmp/ks-previous \
-KS_ACTIVE_TRACKER=/tmp/ks-active \
+KS_STATE_DIR=/tmp/ks-state \
 KS_SEARCH_PATH=/tmp/ks-roots \
 KS_HOME_FILE_PATH=/tmp/ks-roots \
   kitty-sessionizer open

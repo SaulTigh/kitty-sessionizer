@@ -27,6 +27,7 @@ install: ## Link the dispatcher into PREFIX/bin
 	@echo '  map alt+shift+[ remote_control_script /bin/zsh $(TARGET) prev'
 	@echo '  map alt+shift+] remote_control_script /bin/zsh $(TARGET) next'
 	@echo '  map alt+shift+backslash remote_control_script /bin/zsh $(TARGET) last'
+	@echo '  watcher $(ROOT)/kitty/autosave.py'
 
 .PHONY: uninstall
 uninstall: ## Remove the link from PREFIX/bin
@@ -39,3 +40,8 @@ check: ## Parse every script
 	    zsh -n "$$f" || exit 1; \
 	done
 	@echo "all scripts parse"
+
+.PHONY: test
+test: check ## Run the tests
+	@zsh tests/test_session.zsh
+	@PYTHONDONTWRITEBYTECODE=1 kitty +launch tests/test_autosave.py

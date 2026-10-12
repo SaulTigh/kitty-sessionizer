@@ -1,0 +1,16 @@
+#!/usr/bin/env zsh
+# Stands in for `kitten @`. `ls` prints FAKE_LS, FAKE_LS_FOCUSED for the focused
+# tab, or FAKE_LS_SESSION for the tabs of one session. Every other call is
+# written to FAKE_LOG, one argument per line, then a blank line.
+shift
+if [[ "$1" == ls ]]; then
+    if [[ "$*" == *'state:focused'* ]]; then
+        [[ -r "${FAKE_LS_FOCUSED:-}" ]] && cat "$FAKE_LS_FOCUSED"
+    elif [[ "$*" == *'session:'* ]]; then
+        [[ -r "${FAKE_LS_SESSION:-}" ]] && cat "$FAKE_LS_SESSION"
+    else
+        [[ -r "${FAKE_LS:-}" ]] && cat "$FAKE_LS"
+    fi
+    exit 0
+fi
+print -rl -- "$@" "" >> "$FAKE_LOG"

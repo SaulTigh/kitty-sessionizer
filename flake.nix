@@ -38,7 +38,7 @@
 
               app="$out/share/kitty-sessionizer"
               mkdir -p "$app" "$out/bin"
-              cp -R bin lib libexec "$app/"
+              cp -R bin kitty lib libexec "$app/"
 
               makeWrapper ${pkgs.zsh}/bin/zsh "$out/bin/kitty-sessionizer" \
                 --add-flags "$app/bin/kitty-sessionizer" \

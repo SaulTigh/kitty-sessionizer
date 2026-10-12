@@ -36,10 +36,18 @@
 # The current session, the session before it, and every session that has been
 # opened, newest first. kitty does not report the order the sessions were used
 # in, so the tool keeps its own record.
+#
+# The record belongs to one kitty process. A restarted kitty starts with an
+# empty record. A child of kitty gets KITTY_PID, and a remote_control_script
+# runs as a direct child of kitty, so $PPID covers it. kitty/autosave.py reads
+# the same directory, so KS_STATE_ROOT must match in both.
 
-: ${KS_CURRENT_TRACKER:=/tmp/kitty-current-session}
-: ${KS_PREVIOUS_TRACKER:=/tmp/kitty-previous-session}
-: ${KS_ACTIVE_TRACKER:=/tmp/kitty-active-sessions}
+: ${KS_STATE_ROOT:=${XDG_RUNTIME_DIR:-/tmp}/kitty-sessionizer}
+: ${KS_STATE_DIR:=$KS_STATE_ROOT/${KITTY_PID:-$PPID}}
+: ${KS_CURRENT_TRACKER:=$KS_STATE_DIR/current-session}
+: ${KS_PREVIOUS_TRACKER:=$KS_STATE_DIR/previous-session}
+: ${KS_ACTIVE_TRACKER:=$KS_STATE_DIR/active-sessions}
+: ${KS_PROJECT_TRACKER:=$KS_STATE_DIR/session-projects}
 
 # --- Discovery ----------------------------------------------------------------
 # Search paths keep their order in the picker. A path that does not exist is
