@@ -10,6 +10,7 @@ ks_current_session="$REPLY"
 ks_kitty_save_session "$ks_current_session"
 
 ks_tracker_active_map
+(( ${+ks_active_map[$ks_current_session]} )) || ks_current_session=""
 
 # The exit status of the pipeline cannot be trusted. When the user selects a row
 # before the search finishes, fzf stops reading, the row producer dies of

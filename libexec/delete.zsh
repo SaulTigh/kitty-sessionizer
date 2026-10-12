@@ -17,6 +17,7 @@ fi
 ks_tracker_current
 typeset -g ks_current="$REPLY"
 ks_tracker_active_map
+(( ${+ks_active_map[$ks_current]} )) || ks_current=""
 
 # A row marks a session the way the project picker does. The map leads from a
 # row back to its file. gum gives a pick back without its leading spaces, so
@@ -144,7 +145,7 @@ if (( ks_current_gone )); then
         return 0
     fi
     ks_tracker_set_current "$ks_next"
-    ks_kitty_goto_session "$ks_next"
+    ks_session_goto "$ks_next"
 fi
 for ks_file in "${ks_targets[@]}"; do
     [[ "$ks_file" == "$ks_current" ]] && continue
