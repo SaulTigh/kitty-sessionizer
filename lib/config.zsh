@@ -78,9 +78,9 @@ fi
 # first, which would stop the picker from drawing rows as fd produces them.
 
 : ${KS_PAD:=48}
-: ${KS_TAG_CURRENT:="▶ (current)"}
-: ${KS_TAG_ACTIVE:="▶"}
-: ${KS_TAG_NONE:="  "}
+: ${KS_TAG_CURRENT:="●"}
+: ${KS_TAG_ACTIVE:="○"}
+: ${KS_TAG_NONE:=" "}
 
 # --- Colours ------------------------------------------------------------------
 # Jellybeans, matched to the fzf theme below.
