@@ -1,6 +1,7 @@
 #!/usr/bin/env zsh
-# Tests for the session record and the save guard. kitten is faked, so no kitty
-# has to run. Each test runs in a subshell with its own state.
+# Tests for the session record, the save guard and the picker order. kitten is
+# faked, so no kitty has to run. The picker tests run fd and fzf. Each test runs
+# in a subshell with its own state.
 
 set -euo pipefail
 
@@ -35,6 +36,7 @@ setup() {
     export FAKE_LOG="$TMP/log" FAKE_LS="$TMP/ls" FAKE_LS_FOCUSED="$TMP/ls-focused" FAKE_LS_SESSION="$TMP/ls-session"
     : > "$FAKE_LOG"
     export KS_KITTEN="$KS_ROOT/tests/fake-kitten"
+    export KS_FD=fd KS_FZF=fzf
     export KS_STATE_ROOT="$TMP/state"
     export KS_SESSION_DIR="$TMP/sessions"
     export KITTY_PID=4242
@@ -202,6 +204,116 @@ test_enter_records_the_project_and_restores_tabs() {
     assert_eq "$REPLY" "$PROJ" project
     [[ -f "$P" ]] || fail "session file not rendered"
     [[ "$(<"$FAKE_LOG")" == *"--tab-title"$'\n'"proj :: zsh"* ]] || fail "zsh tab not reopened: $(<"$FAKE_LOG")"
+}
+
+picker_paths() {
+    typeset -ga reply=()
+    local line
+    for line in "${(@f)1}"; do
+        ks_selection_field "$line" $KS_FIELD_PATH
+        reply+=("${REPLY%/}")
+    done
+}
+
+rank() {
+    local cmd=${KS_PICKER_RANK//\{q\}/${(qq)1}}
+    KS_PICKER_CACHE="$TMP/cache" sh -c "$cmd"
+}
+
+test_picker_lists_open_sessions_first_and_the_current_one_last() {
+    ks_use picker
+    local name out
+    mkdir -p "$TMP/cache"
+    print -r -- old > "$C"
+    for name in a b c d; do
+        mkdir -p "$TMP/work/$name"
+    done
+    for name in c b a; do
+        ks_tracker_set_project "$KS_SESSION_DIR/work-$name.kitty-session" "$TMP/work/$name"
+        ks_tracker_add_active "$KS_SESSION_DIR/work-$name.kitty-session"
+    done
+    ls_json work-a work-b work-c > "$FAKE_LS"
+    ks_tracker_active_map
+    ks_current_session="$A"
+    KS_SEARCH_PATHS=("$TMP/work")
+    KS_HOME_FILE_PATH="$TMP/none"
+
+    out="$(ks_picker_feed "$TMP/cache")"
+    picker_paths "$out"
+    assert_eq "${reply[1,3]}" "$TMP/work/b $TMP/work/c $TMP/work/a" "open rows"
+    assert_eq "${(o)reply[4,-1]}" "$TMP/work/d $TMP/work/proj" "other rows"
+    [[ "${${(@f)out}[3]}" == "$KS_TAG_CURRENT "* ]] || fail "current marker: ${${(@f)out}[3]}"
+    [[ -e "$TMP/cache/done" ]] || fail "no done marker"
+    ks_read_lines "$TMP/cache/open"
+    assert_eq "${#reply}" 3 "cached open rows"
+    ks_read_lines "$TMP/cache/rest"
+    assert_eq "${#reply}" 2 "cached other rows"
+}
+
+test_picker_query_keeps_open_sessions_above_better_matches() {
+    ks_use picker
+    local name out
+    local -a open=() rest=()
+    mkdir -p "$TMP/cache"
+    for name in customer-screening customerscreening.api; do
+        ks_picker_row "$TMP/work/$name" "$KS_SESSION_DIR/work-$name.kitty-session"
+        open+=("$REPLY")
+    done
+    for name in cxustomerscreening unrelated customerscreening; do
+        ks_picker_row "$TMP/work/$name" "$KS_SESSION_DIR/work-$name.kitty-session"
+        rest+=("$REPLY")
+    done
+    ks_write_lines "$TMP/cache/open" "${open[@]}"
+    ks_write_lines "$TMP/cache/rest" "${rest[@]}"
+    : > "$TMP/cache/done"
+
+    out="$(rank customerscreening)"
+    picker_paths "$out"
+    assert_eq "${reply[*]}" "$TMP/work/customer-screening $TMP/work/customerscreening.api $TMP/work/customerscreening $TMP/work/cxustomerscreening" "ranked rows"
+}
+
+test_picker_query_with_no_match_is_not_an_error() {
+    ks_use picker
+    local out
+    mkdir -p "$TMP/cache"
+    ks_picker_row "$PROJ" ""
+    ks_write_lines "$TMP/cache/open" "$REPLY"
+    ks_write_lines "$TMP/cache/rest" "$REPLY"
+    : > "$TMP/cache/done"
+    out="$(rank asjdk)" || fail "a query with no match failed"
+    assert_eq "$out" "" "ranked rows"
+}
+
+test_picker_query_reports_a_broken_fzf() {
+    ks_use picker
+    mkdir -p "$TMP/cache"
+    : > "$TMP/cache/open"
+    : > "$TMP/cache/rest"
+    : > "$TMP/cache/done"
+    print -rl -- '#!/bin/sh' 'exit 2' > "$TMP/broken-fzf"
+    chmod +x "$TMP/broken-fzf"
+    export KS_FZF="$TMP/broken-fzf"
+    if rank proj > /dev/null; then
+        fail "a broken fzf did not fail the query"
+    fi
+}
+
+test_picker_query_waits_for_the_search_to_finish() {
+    ks_use picker
+    local -i pid
+    mkdir -p "$TMP/cache"
+    : > "$TMP/cache/open"
+    : > "$TMP/cache/rest"
+    rank proj > "$TMP/out" &
+    pid=$!
+    sleep 0.3
+    kill -0 $pid 2>/dev/null || fail "the query did not wait for the search"
+    ks_picker_row "$PROJ" ""
+    print -r -- "$REPLY" >> "$TMP/cache/rest"
+    : > "$TMP/cache/done"
+    wait $pid
+    picker_paths "$(<"$TMP/out")"
+    assert_eq "${reply[*]}" "$PROJ" "ranked rows"
 }
 
 for t in ${(ok)functions[(I)test_*]}; do

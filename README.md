@@ -124,9 +124,18 @@ A marker in the picker shows the state of each project:
 
 | Marker | Meaning |
 |---|---|
-| `▶ (current)` | the session you are in |
-| `▶` | a session that is open |
+| `●` | the session you are in |
+| `○` | a session that is open |
 | none | no session yet |
+
+The open sessions come first, the most recently used one on top. The current
+session comes last of them, because you open the picker to go somewhere else.
+The other projects follow in the order `fd` finds them.
+
+The open sessions stay on top while you type, in the same order. An open
+session that matches comes before a closed project, even one that matches
+better. The closed projects follow, best match first. A query typed before the
+search finishes ranks the rows once the search is done.
 
 Select a plain file instead of a directory to open it in a new tab in `$KS_EDITOR`.
 
@@ -292,7 +301,7 @@ lib/git.zsh             Wrappers over `git`
 lib/gum.zsh             Wrappers over `gum`: line, choice, confirm, spinner
 lib/session.zsh         Session files and the record of open sessions
 lib/discovery.zsh       Stream the candidate paths
-lib/picker.zsh          fzf options, row format, selection parse
+lib/picker.zsh          Row format, row order, fzf run, selection parse
 kitty/autosave.py       kitty watcher that saves open sessions
 tests/                  Tests, run with `make test`
 ```
@@ -335,8 +344,9 @@ environment kitty starts with.
 ## Verify a change
 
 Run `make test`. It parses every script, then runs the tests of the session
-record and of the watcher. The watcher tests run in the Python of kitty, so
-kitty must be in `PATH`. Then:
+record, the picker order and the watcher. The picker tests run `fd` and `fzf`,
+and the watcher tests run in the Python of kitty, so all three must be in
+`PATH`. Then:
 
 1. `kitty-sessionizer help` lists the actions.
 2. `kitty-sessionizer bogus` prints an error and exits non-zero.
@@ -346,22 +356,26 @@ kitty must be in `PATH`. Then:
    switches to it.
 5. Select the same project three times. `active-sessions` holds one
    line for it, not three, and the line is the first one.
-6. Open three projects in turn. Press `alt+shift+[` twice. kitty lands in the
+6. Open two projects whose names share a word, then a third one. Press
+   `alt+shift+p`. The second project comes first, then the first one, then
+   the third one with `●`. Type the shared word. Both open projects
+   come before every closed project that matches.
+7. Open three projects in turn. Press `alt+shift+[` twice. kitty lands in the
    first project. Press `alt+shift+]` once. kitty lands in the second one.
    `active-sessions` keeps the order it had.
-7. Close every tab of the third project by hand. Press `alt+shift+[` from the
+8. Close every tab of the third project by hand. Press `alt+shift+[` from the
    first project. kitty lands in the second one and skips the third.
    Press `alt+shift+backslash`. kitty goes back to the first project. Press it
    again. kitty returns to the second one.
-8. Press `alt+shift+d`. Mark one session, then choose `Cancel`. Nothing is
+9. Press `alt+shift+d`. Mark one session, then choose `Cancel`. Nothing is
    deleted.
-9. Press `alt+shift+c`. Paste a URL, pick a directory, keep the name, and choose
-   `Open` at the last prompt. kitty switches to the clone. Every prompt and
-   every message shares one left margin.
-10. Press `alt+shift+c` again and give the same name. The action reports the
+10. Press `alt+shift+c`. Paste a URL, pick a directory, keep the name, and
+    choose `Open` at the last prompt. kitty switches to the clone. Every
+    prompt and every message shares one left margin.
+11. Press `alt+shift+c` again and give the same name. The action reports the
     clash and clones nothing.
-11. Open two projects. Add a tab in the second one. Kill kitty with
-    `kill -9`. Start kitty and press `alt+shift+p`. No row shows `▶`. Pick the
+12. Open two projects. Add a tab in the second one. Kill kitty with
+    `kill -9`. Start kitty and press `alt+shift+p`. No row shows a dot. Pick the
     second project. It comes back with the new tab. The first project comes
     back as it was.
 

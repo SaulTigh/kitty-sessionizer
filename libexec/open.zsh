@@ -12,12 +12,16 @@ ks_kitty_save_session "$ks_current_session"
 ks_tracker_active_map
 (( ${+ks_active_map[$ks_current_session]} )) || ks_current_session=""
 
+typeset -g ks_picker_cache
+ks_picker_cache="$(mktemp -d "${TMPDIR:-/tmp}/kitty-sessionizer.XXXXXX")"
+trap 'rm -rf -- "$ks_picker_cache"' EXIT
+
 # The exit status of the pipeline cannot be trusted. When the user selects a row
 # before the search finishes, fzf stops reading, the row producer dies of
 # SIGPIPE, and `pipefail` reports the pipeline as failed even though a row was
 # chosen. An empty result is the reliable sign that nothing was selected.
 typeset -g ks_selected=""
-ks_selected="$(ks_picker_rows | ks_picker_run || true)"
+ks_selected="$(ks_picker_feed "$ks_picker_cache" | ks_picker_run "$ks_picker_cache" || true)"
 [[ -n "$ks_selected" ]] || return 0
 
 ks_selection_field "$ks_selected" $KS_FIELD_SESSION
