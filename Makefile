@@ -10,8 +10,18 @@ help: ## Show this text
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) \
 	  | awk -F':.*?## ' '{ printf "  %-10s %s\n", $$1, $$2 }'
 
+.PHONY: deps
+deps: ## Check that every tool in lib/config.zsh is installed
+	@zsh -c 'set -u; KS_ROOT="$(ROOT)"; KS_LIB="$$KS_ROOT/lib"; \
+	  source "$$KS_LIB/bootstrap.zsh"; ks_use config; missing=0; \
+	  for var in KS_KITTEN KS_FD KS_FZF KS_GUM KS_TREE KS_BAT KS_GIT KS_EDITOR; do \
+	    ( ks_require_tools "$$var" ) || missing=1; \
+	  done; \
+	  (( ! missing )) || { print -ru2 -- "install the missing tools, or export the KS_* variable with another path"; exit 1 }; \
+	  print -r -- "all tools found"'
+
 .PHONY: install
-install: ## Link the dispatcher into PREFIX/bin
+install: deps ## Check the tools, then link the dispatcher into PREFIX/bin
 	@mkdir -p "$(BINDIR)"
 	@if [ -e "$(TARGET)" ] && [ ! -L "$(TARGET)" ]; then \
 	    mv "$(TARGET)" "$(TARGET).pre-refactor"; \

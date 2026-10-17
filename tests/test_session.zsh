@@ -250,6 +250,19 @@ test_picker_lists_open_sessions_first_and_the_current_one_last() {
     assert_eq "${#reply}" 2 "cached other rows"
 }
 
+test_picker_lists_a_home_file_once_when_home_is_a_search_path() {
+    ks_use picker
+    local out
+    mkdir -p "$TMP/cache"
+    : > "$TMP/work/note.txt"
+    KS_SEARCH_PATHS=("$TMP/work")
+    KS_HOME_FILE_PATH="$TMP/work"
+
+    out="$(ks_picker_feed "$TMP/cache")"
+    picker_paths "$out"
+    assert_eq "${(o)reply[*]}" "$TMP/work/note.txt $TMP/work/proj" "rows"
+}
+
 test_picker_query_keeps_open_sessions_above_better_matches() {
     ks_use picker
     local name out
