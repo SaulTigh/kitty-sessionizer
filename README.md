@@ -273,26 +273,9 @@ set it in the environment kitty starts with.
 
 ## Develop
 
-```
-bin/kitty-sessionizer   Find the repository, load the prelude, run one action
-libexec/*.zsh           One file per action
-lib/bootstrap.zsh       ks_use, ks_die, ks_require_tools
-lib/config.zsh          Every tunable value
-lib/common.zsh          The prelude: config, ui and small helpers
-lib/ui.zsh              Colours, messages, key and line prompts
-lib/kitty.zsh           Wrappers over `kitten @`
-lib/git.zsh             Wrappers over `git`
-lib/gum.zsh             Wrappers over `gum`
-lib/session.zsh         Session files and the record of open sessions
-lib/discovery.zsh       Stream the candidate paths
-lib/picker.zsh          Row format, row order, fzf run, selection parse
-kitty/autosave.py       kitty watcher that saves open sessions
-tests/                  Tests, run with `make test`
-```
-
-To add an action, write `libexec/<name>.zsh` with a `# summary: <one line>`
-comment on the first line, and call `ks_use <module> …` for the modules it
-needs. The dispatcher finds the file on its own.
+[docs/architecture.md](docs/architecture.md) explains the parts of the tool
+and how they talk to kitty. [docs/actions.md](docs/actions.md) shows how to
+add or change an action, and the conventions the actions share.
 
 `make test` parses every script, then runs the tests of the session record,
 the picker and the watcher. The picker tests need `fd` and `fzf` in `PATH`, and
