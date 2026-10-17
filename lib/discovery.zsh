@@ -8,13 +8,16 @@ ks_require_tools KS_FD
 # the picker draws its first rows before the search finishes.
 #
 # A search path that no longer exists is skipped instead of ending the run.
+# The home files are listed once: when the home directory is a search path,
+# the first loop has them already.
 ks_find_entries() {
-    local path
-    for path in "${KS_SEARCH_PATHS[@]}"; do
-        [[ -d "$path" ]] || continue
-        "$KS_FD" --hidden -d "$KS_DEPTH" . "$path" || true
+    local dir
+    for dir in "${KS_SEARCH_PATHS[@]}"; do
+        [[ -d "$dir" ]] || continue
+        "$KS_FD" --hidden -d "$KS_DEPTH" . "$dir" || true
     done
 
+    (( ${KS_SEARCH_PATHS[(Ie)$KS_HOME_FILE_PATH]} )) && return 0
     if [[ -d "$KS_HOME_FILE_PATH" ]]; then
         "$KS_FD" --hidden -t f -d "$KS_DEPTH" . "$KS_HOME_FILE_PATH" || true
     fi

@@ -57,20 +57,16 @@
 : ${KS_HOME_FILE_PATH:=$HOME}
 
 # An array cannot cross a process boundary, so the search paths also have a
-# colon-separated form. Set KS_SEARCH_PATH to override them for one run:
+# colon-separated form. Set KS_SEARCH_PATH to override them for one run, or
+# export it from ~/.zshenv to set them for good:
 #
-#   KS_SEARCH_PATH=/tmp/a:/tmp/b kitty-sessionizer open
+#   export KS_SEARCH_PATH=~/workspace/work:~/workspace/personal:~/.config
 #
 typeset -ga KS_SEARCH_PATHS
 if [[ -n "${KS_SEARCH_PATH:-}" ]]; then
     KS_SEARCH_PATHS=("${(@s.:.)KS_SEARCH_PATH}")
 elif (( ! ${#KS_SEARCH_PATHS} )); then
-    KS_SEARCH_PATHS=(
-        ~/workspace/nc
-        ~/workspace/personal
-        ~/workspace/backups
-        ~/.config
-    )
+    KS_SEARCH_PATHS=(~)
 fi
 
 # --- Row format ---------------------------------------------------------------

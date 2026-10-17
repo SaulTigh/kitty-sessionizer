@@ -69,6 +69,14 @@ class AutosaveTest(unittest.TestCase):
         self.assertEqual(self.read(b), 'new_tab b1\nnew_tab b2')
         self.assertEqual(boss.matches, ['session:^work\\-a$', 'session:^work\\-b$'])
 
+    def test_skips_a_file_that_is_already_current(self):
+        a = self.session('work-a', body='new_tab a1')
+        self.track(a)
+        before = os.stat(a).st_mtime_ns
+
+        self.assertEqual(autosave.save_all(FakeBoss({'work-a': ['a1']})), [])
+        self.assertEqual(os.stat(a).st_mtime_ns, before)
+
     def test_skips_a_session_with_no_window(self):
         a = self.session('work-a')
         self.track(a)
@@ -132,6 +140,7 @@ class AutosaveTest(unittest.TestCase):
 
         autosave.on_tab_bar_dirty(boss, None, {})
         autosave.on_focus_change(boss, None, {'focused': True})
+        autosave.on_resize(boss, None, {})
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][1:], (autosave.DELAY, False))
 

@@ -2,8 +2,9 @@
 #
 # kitty runs no hook when it is killed, so a save on exit would never run. The
 # watcher saves after every change instead: a tab opens, closes or changes its
-# title, or the focus moves. A burst of changes gives one save, DELAY seconds
-# after the first one.
+# title, the focus moves, or a window is resized. A burst of changes gives one
+# save, DELAY seconds after the first one. A file whose content is already
+# current is left alone.
 #
 # Only a session the tool opened in this kitty process is saved. The tool lists
 # them in its state directory, under the pid of kitty. A session kitty loaded
@@ -53,7 +54,14 @@ def save_session(boss: Any, name: str, path: str) -> bool:
     lines = list(boss.serialize_state_as_session(path, opts))
     if not lines:
         return False
-    atomic_save('\n'.join(lines).encode(), path)
+    data = '\n'.join(lines).encode()
+    try:
+        with open(path, 'rb') as f:
+            if f.read() == data:
+                return False
+    except OSError:
+        pass
+    atomic_save(data, path)
     return True
 
 
@@ -95,4 +103,8 @@ def on_tab_bar_dirty(boss: Any, window: Any, data: dict[str, Any]) -> None:
 
 
 def on_focus_change(boss: Any, window: Any, data: dict[str, Any]) -> None:
+    schedule(boss)
+
+
+def on_resize(boss: Any, window: Any, data: dict[str, Any]) -> None:
     schedule(boss)
