@@ -73,7 +73,10 @@ ks_picker_open_rows() {
 # of the session, because a session is named after the last part of the path.
 ks_picker_rows() {
     local entry session
+    local -A seen=()
     ks_find_entries | while IFS= read -r entry; do
+        (( ${+seen[${entry%/}]} )) && continue
+        seen[${entry%/}]=1
         session=""
         if [[ -d "$entry" ]]; then
             ks_session_path_for "$entry"

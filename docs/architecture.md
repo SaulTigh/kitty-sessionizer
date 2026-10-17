@@ -140,12 +140,12 @@ content is already current is not rewritten.
 
 ## The picker
 
-The picker streams. `fd` lists the entries under each search path, and each
-row goes to `fzf` as soon as it is found, so the first rows show before the
-search ends.
+The picker streams. `fd` lists the entries under each search path. Chosen
+folders and home files follow. Each row goes to `fzf` as soon as it is found,
+so the first rows show before the search ends.
 
 The open sessions come first, in the order of `active-sessions`, with the
-current one last. The other projects follow in the order `fd` finds them.
+current one last. Search results and chosen folders follow in configured order.
 Each row carries four tab-separated fields: the marker and name, the group,
 the session file and the path. `fzf` searches the first field and shows the
 first two. The action reads the last two.
