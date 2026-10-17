@@ -263,6 +263,45 @@ test_picker_lists_a_home_file_once_when_home_is_a_search_path() {
     assert_eq "${(o)reply[*]}" "$TMP/work/note.txt $TMP/work/proj" "rows"
 }
 
+test_picker_hides_home_files_when_disabled() {
+    ks_use picker
+    local out
+    mkdir -p "$TMP/cache" "$TMP/home/project"
+    : > "$TMP/home/note.txt"
+    HOME="$TMP/home"
+    KS_SEARCH_PATHS=("$TMP/home")
+    KS_HOME_FILE_PATH=""
+
+    out="$(ks_picker_feed "$TMP/cache")"
+    picker_paths "$out"
+    assert_eq "${reply[*]}" "$TMP/home/project" "rows"
+}
+
+test_environment_sets_extra_projects_and_disables_home_files() {
+    export KS_HOME_FILE_PATH=""
+    export KS_EXTRA_PROJECTS="$TMP/one project:$TMP/two"
+    unset KS_EXTRA_PROJECT_PATHS
+    _ks_loaded=()
+    ks_use config
+
+    assert_eq "$KS_HOME_FILE_PATH" "" "home files"
+    assert_eq "${KS_EXTRA_PROJECT_PATHS[*]}" "$TMP/one project $TMP/two" "extra projects"
+}
+
+test_picker_lists_extra_folders_once_without_their_children() {
+    ks_use picker
+    local out
+    mkdir -p "$TMP/cache" "$TMP/home/config/child" "$TMP/standalone project/child"
+    HOME="$TMP/home"
+    KS_SEARCH_PATHS=("$TMP/home")
+    KS_HOME_FILE_PATH=""
+    KS_EXTRA_PROJECT_PATHS=("$TMP/home/config" "$TMP/standalone project" "$TMP/standalone project" "$TMP/missing")
+
+    out="$(ks_picker_feed "$TMP/cache")"
+    picker_paths "$out"
+    assert_eq "${reply[*]}" "$TMP/home/config $TMP/standalone project" "rows"
+}
+
 test_picker_query_keeps_open_sessions_above_better_matches() {
     ks_use picker
     local name out

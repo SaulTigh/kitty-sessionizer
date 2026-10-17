@@ -54,7 +54,7 @@
 # skipped.
 
 : ${KS_DEPTH:=1}
-: ${KS_HOME_FILE_PATH:=$HOME}
+: ${KS_HOME_FILE_PATH=$HOME}
 
 # An array cannot cross a process boundary, so the search paths also have a
 # colon-separated form. Set KS_SEARCH_PATH to override them for one run, or
@@ -67,6 +67,11 @@ if [[ -n "${KS_SEARCH_PATH:-}" ]]; then
     KS_SEARCH_PATHS=("${(@s.:.)KS_SEARCH_PATH}")
 elif (( ! ${#KS_SEARCH_PATHS} )); then
     KS_SEARCH_PATHS=(~)
+fi
+
+typeset -ga KS_EXTRA_PROJECT_PATHS
+if [[ -n "${KS_EXTRA_PROJECTS:-}" ]]; then
+    KS_EXTRA_PROJECT_PATHS=("${(@s.:.)KS_EXTRA_PROJECTS}")
 fi
 
 # --- Row format ---------------------------------------------------------------

@@ -27,6 +27,9 @@ let
     {
       KS_SEARCH_PATH =
         if cfg.searchPaths == null then null else lib.concatMapStringsSep ":" expandHome cfg.searchPaths;
+      KS_EXTRA_PROJECTS =
+        if cfg.extraProjects == [ ] then null else lib.concatMapStringsSep ":" expandHome cfg.extraProjects;
+      KS_HOME_FILE_PATH = if cfg.includeHomeFiles then null else "";
       KS_DEPTH = if cfg.depth == null then null else toString cfg.depth;
       KS_EDITOR = cfg.editor;
       KS_SESSION_DIR = cfg.sessionDir;
@@ -105,6 +108,22 @@ in
         Directories to search for projects, in picker order. A leading `~`
         expands to the home directory. Sets `KS_SEARCH_PATH`.
       '';
+    };
+
+    extraProjects = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "~/project" ];
+      description = ''
+        Folders to show as projects, in picker order. Each folder appears as
+        one entry. A leading `~` expands to the home directory.
+      '';
+    };
+
+    includeHomeFiles = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to show files found in the home directory.";
     };
 
     depth = mkOption {
