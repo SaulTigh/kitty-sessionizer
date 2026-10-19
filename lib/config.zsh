@@ -51,22 +51,26 @@
 
 # --- Discovery ----------------------------------------------------------------
 # Search paths keep their order in the picker. A path that does not exist is
-# skipped.
+# skipped. A search path lists its folders. A file search path lists its files
+# too.
 
 : ${KS_DEPTH:=1}
-: ${KS_HOME_FILE_PATH=$HOME}
 
 # An array cannot cross a process boundary, so the search paths also have a
 # colon-separated form. Set KS_SEARCH_PATH to override them for one run, or
 # export it from ~/.zshenv to set them for good:
 #
 #   export KS_SEARCH_PATH=~/workspace/work:~/workspace/personal:~/.config
+#   export KS_FILE_SEARCH_PATH=~
 #
 typeset -ga KS_SEARCH_PATHS
 if [[ -n "${KS_SEARCH_PATH:-}" ]]; then
     KS_SEARCH_PATHS=("${(@s.:.)KS_SEARCH_PATH}")
-elif (( ! ${#KS_SEARCH_PATHS} )); then
-    KS_SEARCH_PATHS=(~)
+fi
+
+typeset -ga KS_FILE_SEARCH_PATHS
+if [[ -n "${KS_FILE_SEARCH_PATH:-}" ]]; then
+    KS_FILE_SEARCH_PATHS=("${(@s.:.)KS_FILE_SEARCH_PATH}")
 fi
 
 typeset -ga KS_EXTRA_PROJECT_PATHS
