@@ -37,6 +37,7 @@ setup() {
     : > "$FAKE_LOG"
     export KS_KITTEN="$KS_ROOT/tests/fake-kitten"
     export KS_FD=fd KS_FZF=fzf
+    unset KS_SEARCH_PATH KS_FILE_SEARCH_PATH KS_EXTRA_PROJECTS
     export KS_STATE_ROOT="$TMP/state"
     export KS_SESSION_DIR="$TMP/sessions"
     export KITTY_PID=4242
@@ -236,7 +237,6 @@ test_picker_lists_open_sessions_first_and_the_current_one_last() {
     ks_tracker_active_map
     ks_current_session="$A"
     KS_SEARCH_PATHS=("$TMP/work")
-    KS_HOME_FILE_PATH="$TMP/none"
 
     out="$(ks_picker_feed "$TMP/cache")"
     picker_paths "$out"
@@ -250,41 +250,39 @@ test_picker_lists_open_sessions_first_and_the_current_one_last() {
     assert_eq "${#reply}" 2 "cached other rows"
 }
 
-test_picker_lists_a_home_file_once_when_home_is_a_search_path() {
+test_picker_lists_only_folders_under_a_search_path() {
     ks_use picker
     local out
     mkdir -p "$TMP/cache"
     : > "$TMP/work/note.txt"
     KS_SEARCH_PATHS=("$TMP/work")
-    KS_HOME_FILE_PATH="$TMP/work"
 
     out="$(ks_picker_feed "$TMP/cache")"
     picker_paths "$out"
-    assert_eq "${(o)reply[*]}" "$TMP/work/note.txt $TMP/work/proj" "rows"
+    assert_eq "${reply[*]}" "$TMP/work/proj" "rows"
 }
 
-test_picker_hides_home_files_when_disabled() {
+test_picker_lists_files_and_folders_under_a_file_search_path() {
     ks_use picker
     local out
     mkdir -p "$TMP/cache" "$TMP/home/project"
     : > "$TMP/home/note.txt"
-    HOME="$TMP/home"
-    KS_SEARCH_PATHS=("$TMP/home")
-    KS_HOME_FILE_PATH=""
+    KS_SEARCH_PATHS=("$TMP/work")
+    KS_FILE_SEARCH_PATHS=("$TMP/home")
 
     out="$(ks_picker_feed "$TMP/cache")"
     picker_paths "$out"
-    assert_eq "${reply[*]}" "$TMP/home/project" "rows"
+    assert_eq "${(j: :)${(o)reply[@]}}" "$TMP/home/note.txt $TMP/home/project $TMP/work/proj" "rows"
 }
 
-test_environment_sets_extra_projects_and_disables_home_files() {
-    export KS_HOME_FILE_PATH=""
+test_environment_sets_file_search_paths_and_extra_projects() {
+    export KS_FILE_SEARCH_PATH="$TMP/home:$TMP/other"
     export KS_EXTRA_PROJECTS="$TMP/one project:$TMP/two"
-    unset KS_EXTRA_PROJECT_PATHS
+    unset KS_FILE_SEARCH_PATHS KS_EXTRA_PROJECT_PATHS
     _ks_loaded=()
     ks_use config
 
-    assert_eq "$KS_HOME_FILE_PATH" "" "home files"
+    assert_eq "${KS_FILE_SEARCH_PATHS[*]}" "$TMP/home $TMP/other" "file search paths"
     assert_eq "${KS_EXTRA_PROJECT_PATHS[*]}" "$TMP/one project $TMP/two" "extra projects"
 }
 
@@ -294,7 +292,6 @@ test_picker_lists_extra_folders_once_without_their_children() {
     mkdir -p "$TMP/cache" "$TMP/home/config/child" "$TMP/standalone project/child"
     HOME="$TMP/home"
     KS_SEARCH_PATHS=("$TMP/home")
-    KS_HOME_FILE_PATH=""
     KS_EXTRA_PROJECT_PATHS=("$TMP/home/config" "$TMP/standalone project" "$TMP/standalone project" "$TMP/missing")
 
     out="$(ks_picker_feed "$TMP/cache")"

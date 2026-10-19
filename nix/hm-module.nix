@@ -26,10 +26,11 @@ let
   env = lib.filterAttrs (_: value: value != null) (
     {
       KS_SEARCH_PATH =
-        if cfg.searchPaths == null then null else lib.concatMapStringsSep ":" expandHome cfg.searchPaths;
+        if cfg.searchPaths == [ ] then null else lib.concatMapStringsSep ":" expandHome cfg.searchPaths;
+      KS_FILE_SEARCH_PATH =
+        if cfg.fileSearchPaths == [ ] then null else lib.concatMapStringsSep ":" expandHome cfg.fileSearchPaths;
       KS_EXTRA_PROJECTS =
         if cfg.extraProjects == [ ] then null else lib.concatMapStringsSep ":" expandHome cfg.extraProjects;
-      KS_HOME_FILE_PATH = if cfg.includeHomeFiles then null else "";
       KS_DEPTH = if cfg.depth == null then null else toString cfg.depth;
       KS_EDITOR = cfg.editor;
       KS_SESSION_DIR = cfg.sessionDir;
@@ -98,15 +99,25 @@ in
     };
 
     searchPaths = mkOption {
-      type = types.nullOr (types.listOf types.str);
-      default = null;
+      type = types.listOf types.str;
+      default = [ ];
       example = [
         "~/workspace/personal"
         "~/.config"
       ];
       description = ''
-        Directories to search for projects, in picker order. A leading `~`
-        expands to the home directory. Sets `KS_SEARCH_PATH`.
+        Directories to search for project folders, in picker order. A leading
+        `~` expands to the home directory. Sets `KS_SEARCH_PATH`.
+      '';
+    };
+
+    fileSearchPaths = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "~" ];
+      description = ''
+        Directories to search for both files and folders, in picker order. A
+        leading `~` expands to the home directory. Sets `KS_FILE_SEARCH_PATH`.
       '';
     };
 
@@ -118,12 +129,6 @@ in
         Folders to show as projects, in picker order. Each folder appears as
         one entry. A leading `~` expands to the home directory.
       '';
-    };
-
-    includeHomeFiles = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Whether to show files found in the home directory.";
     };
 
     depth = mkOption {

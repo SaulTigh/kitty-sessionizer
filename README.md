@@ -77,8 +77,8 @@ Import the Home Manager module and enable it:
       "~/workspace/work"
       "~/.config"
     ];
+    fileSearchPaths = [ "~" ];
     extraProjects = [ "~/dotfiles" ];
-    includeHomeFiles = false;
   };
 }
 ```
@@ -90,9 +90,9 @@ kitty still needs `allow_remote_control`.
 
 | Option | Sets | Default |
 |---|---|---|
-| `searchPaths` | `KS_SEARCH_PATH` | `~` |
+| `searchPaths` | `KS_SEARCH_PATH` | `[]` |
+| `fileSearchPaths` | `KS_FILE_SEARCH_PATH` | `[]` |
 | `extraProjects` | `KS_EXTRA_PROJECTS` | `[]` |
-| `includeHomeFiles` | empty `KS_HOME_FILE_PATH` when false | `true` |
 | `depth` | `KS_DEPTH` | `1` |
 | `editor` | `KS_EDITOR` | `nvim` |
 | `sessionDir` | `KS_SESSION_DIR` | `~/.local/share/kitty/sessions` |
@@ -103,7 +103,8 @@ kitty still needs `allow_remote_control`.
 | `kitty.listenOn` | `listen_on`, or `null` to leave it alone | `unix:@kitty` |
 | `kitty.keys.<action>` | the key of each action, or `null` to skip it | the keys above |
 
-A leading `~` in `searchPaths` and `extraProjects` expands to your home directory.
+A leading `~` in `searchPaths`, `fileSearchPaths` and `extraProjects` expands to
+your home directory.
 Each extra project is one selectable folder. It does not add its children or
 change the clone destination list.
 
@@ -239,25 +240,25 @@ name wins. kitty starts the tool as `/bin/zsh <script>`, which reads
 
 ```zsh
 export KS_SEARCH_PATH="$HOME/workspace/work:$HOME/workspace/personal:$HOME/.config"
+export KS_FILE_SEARCH_PATH="$HOME"
 ```
 
 | Variable | Default |
 |---|---|
-| `KS_SEARCH_PATH` | `~` |
+| `KS_SEARCH_PATH` | empty |
+| `KS_FILE_SEARCH_PATH` | empty |
 | `KS_EXTRA_PROJECTS` | empty |
 | `KS_DEPTH` | `1` |
-| `KS_HOME_FILE_PATH` | `~` |
 | `KS_SESSION_DIR` | `~/.local/share/kitty/sessions` |
 | `KS_TEMPLATE` | `~/.config/kitty/default.kitty-session` |
 | `KS_EDITOR` | `nvim` |
 | `KS_FD`, `KS_FZF`, `KS_GUM`, `KS_KITTEN`, `KS_TREE`, `KS_BAT` | `/opt/homebrew/bin/<tool>` |
 | `KS_GIT` | `/usr/bin/git` |
 
-The picker lists the entries under each search path, then each folder in
-`KS_EXTRA_PROJECTS`, then the files in `KS_HOME_FILE_PATH`. Separate extra
-folders with colons. Set `KS_HOME_FILE_PATH` to an empty string to hide home
-files, including those found through a home search path. The tool paths are
-absolute because kitty starts the tool with a short `PATH`. gum takes its
+The picker lists the folders under each path in `KS_SEARCH_PATH`, then the
+files and folders under each path in `KS_FILE_SEARCH_PATH`, then each folder in
+`KS_EXTRA_PROJECTS`. Separate the paths in each list with colons. The tool
+paths are absolute because kitty starts the tool with a short `PATH`. gum takes its
 colours from `GUM_*` variables, and `lib/config.zsh` exports the Jellybeans set.
 
 ## State
@@ -295,6 +296,5 @@ throwaway state:
 KS_SESSION_DIR=/tmp/ks-test \
 KS_STATE_DIR=/tmp/ks-state \
 KS_SEARCH_PATH=/tmp/ks-roots \
-KS_HOME_FILE_PATH=/tmp/ks-roots \
   kitty-sessionizer open
 ```
