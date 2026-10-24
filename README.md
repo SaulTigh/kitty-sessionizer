@@ -97,6 +97,7 @@ kitty still needs `allow_remote_control`.
 | `editor` | `KS_EDITOR` | `nvim` |
 | `sessionDir` | `KS_SESSION_DIR` | `~/.local/share/kitty/sessions` |
 | `template` | `KS_TEMPLATE` | `~/.config/kitty/default.kitty-session` |
+| `templateRules` | `KS_TEMPLATE_RULES` | `[]` |
 | `environment` | any other `KS_*` variable | `{ }` |
 | `kitty.enable` | the key bindings | `true` |
 | `kitty.autosave` | the watcher | `true` |
@@ -105,8 +106,30 @@ kitty still needs `allow_remote_control`.
 
 A leading `~` in `searchPaths`, `fileSearchPaths` and `extraProjects` expands to
 your home directory.
+It also expands in `template` and each `templateRules` directory and template.
 Each extra project is one selectable folder. It does not add its children or
 change the clone destination list.
+
+Set `templateRules` to choose a complete session template by project directory:
+
+```nix
+programs.kitty-sessionizer = {
+  template = "~/.config/kitty/codex.kitty-session";
+  templateRules = [
+    {
+      directory = "~/code/work";
+      template = "~/.config/kitty/claude.kitty-session";
+    }
+  ];
+};
+```
+
+The first matching rule wins. A rule matches its directory and every folder
+below it, but not folders with only a similar name. Put narrower rules first.
+Projects with no match use `template`. An unreadable selected template stops
+the switch before the session changes. With no rules, the old single-template
+behavior remains. For shell configuration, `KS_TEMPLATE_RULES` holds one
+absolute `directory<TAB>template` pair per line.
 
 ## Use
 

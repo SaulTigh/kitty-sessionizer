@@ -37,7 +37,7 @@ setup() {
     : > "$FAKE_LOG"
     export KS_KITTEN="$KS_ROOT/tests/fake-kitten"
     export KS_FD=fd KS_FZF=fzf
-    unset KS_SEARCH_PATH KS_FILE_SEARCH_PATH KS_EXTRA_PROJECTS
+    unset KS_SEARCH_PATH KS_FILE_SEARCH_PATH KS_EXTRA_PROJECTS KS_TEMPLATE_RULES
     export KS_STATE_ROOT="$TMP/state"
     export KS_SESSION_DIR="$TMP/sessions"
     export KITTY_PID=4242
@@ -111,6 +111,67 @@ test_no_open_marker_when_kitty_is_unreachable() {
     ks_tracker_add_active "$A"
     ks_tracker_active_map
     assert_eq "${#ks_active_map}" 0 "open sessions"
+}
+
+test_template_rules_keep_the_fallback_without_configuration() {
+    ks_session_template_for "$PROJ"
+    assert_eq "$REPLY" "$KS_TEMPLATE" template
+}
+
+test_template_rules_use_the_first_matching_directory() {
+    KS_TEMPLATE_RULES="$TMP/work"$'\t'"$TMP/first"$'\n'"$PROJ"$'\t'"$TMP/second"
+    ks_session_template_for "$PROJ/"
+    assert_eq "$REPLY" "$TMP/first" template
+    ks_session_template_for "$TMP/work-other/proj"
+    assert_eq "$REPLY" "$KS_TEMPLATE" boundary
+    ks_session_template_for "$TMP/other/proj"
+    assert_eq "$REPLY" "$KS_TEMPLATE" fallback
+}
+
+test_template_rule_uses_a_more_specific_directory_when_listed_first() {
+    KS_TEMPLATE_RULES="$PROJ/"$'\t'"$TMP/specific"$'\n'"$TMP/work"$'\t'"$TMP/general"
+    ks_session_template_for "$PROJ/child"
+    assert_eq "$REPLY" "$TMP/specific" template
+}
+
+test_missing_configured_template_stops_before_switching() {
+    KS_TEMPLATE_RULES="$TMP/work"$'\t'"$TMP/missing"
+    if ( ks_session_enter "$PROJ" ) > "$TMP/error" 2>&1; then
+        fail "missing template did not stop the switch"
+    fi
+    [[ "$(<"$TMP/error")" == *"missing session template: $TMP/missing"* ]] || fail "missing template error"
+    [[ ! -e "$P" && ! -e "$KS_CURRENT_TRACKER" ]] || fail "session state changed"
+    assert_eq "$(<"$FAKE_LOG")" "" "kitten calls"
+}
+
+test_missing_configured_template_preserves_an_existing_session() {
+    print -r -- old > "$P"
+    ks_tracker_set_current "$A"
+    KS_TEMPLATE_RULES="$TMP/work"$'\t'"$TMP/missing"
+    if ( ks_session_enter "$PROJ" ) > "$TMP/error" 2>&1; then
+        fail "missing template did not stop the switch"
+    fi
+    assert_eq "$(<"$P")" old "saved session"
+    assert_eq "$(<"$KS_CURRENT_TRACKER")" "$A" "current session"
+    assert_eq "$(<"$FAKE_LOG")" "" "kitten calls"
+}
+
+test_local_session_skips_configured_template() {
+    print -r -- 'new_tab own' > "$PROJ/.kitty-session"
+    KS_TEMPLATE_RULES="$TMP/work"$'\t'"$TMP/missing"
+    ks_session_check_template "$PROJ"
+}
+
+test_existing_session_restores_the_selected_template_without_rewriting_it() {
+    print -r -- old > "$P"
+    print -rl -- 'new_tab @@session@@ :: codex' 'cd @@session-path@@' 'launch codex' > "$TMP/codex"
+    KS_TEMPLATE_RULES="$TMP/work"$'\t'"$TMP/codex"
+    ks_tracker_set_project "$P" "$PROJ"
+    ls_tabs 'proj :: nvim' 'proj :: claude' 'proj :: zsh' > "$FAKE_LS_SESSION"
+    ks_session_restore_defaults "$P"
+    [[ "$(<"$FAKE_LOG")" == *'proj :: codex'* ]] || fail "Codex tab was not restored"
+    [[ "$(<"$FAKE_LOG")" == *$'\ncodex' ]] || fail "Codex command was not restored"
+    assert_eq "$(<"$P")" old "saved session"
 }
 
 test_save_runs_when_kitty_is_in_that_session() {
