@@ -28,13 +28,23 @@ let
       KS_SEARCH_PATH =
         if cfg.searchPaths == [ ] then null else lib.concatMapStringsSep ":" expandHome cfg.searchPaths;
       KS_FILE_SEARCH_PATH =
-        if cfg.fileSearchPaths == [ ] then null else lib.concatMapStringsSep ":" expandHome cfg.fileSearchPaths;
+        if cfg.fileSearchPaths == [ ] then
+          null
+        else
+          lib.concatMapStringsSep ":" expandHome cfg.fileSearchPaths;
       KS_EXTRA_PROJECTS =
         if cfg.extraProjects == [ ] then null else lib.concatMapStringsSep ":" expandHome cfg.extraProjects;
       KS_DEPTH = if cfg.depth == null then null else toString cfg.depth;
       KS_EDITOR = cfg.editor;
       KS_SESSION_DIR = cfg.sessionDir;
-      KS_TEMPLATE = cfg.template;
+      KS_TEMPLATE = if cfg.template == null then null else expandHome cfg.template;
+      KS_TEMPLATE_RULES =
+        if cfg.templateRules == [ ] then
+          null
+        else
+          lib.concatMapStringsSep "\n" (
+            rule: "${expandHome rule.directory}\t${expandHome rule.template}"
+          ) cfg.templateRules;
     }
     // lib.mapAttrs (_: toString) cfg.environment
   );
@@ -153,7 +163,26 @@ in
     template = mkOption {
       type = types.nullOr types.str;
       default = null;
-      description = "Template for new session files. Sets `KS_TEMPLATE`.";
+      description = "Fallback template for new session files. A leading `~` expands to the home directory. Sets `KS_TEMPLATE`.";
+    };
+
+    templateRules = mkOption {
+      type = types.listOf (
+        types.submodule {
+          options = {
+            directory = mkOption {
+              type = types.str;
+              description = "Project directory to match, including its descendants. A leading `~` expands to the home directory.";
+            };
+            template = mkOption {
+              type = types.str;
+              description = "Template for projects in this directory. A leading `~` expands to the home directory.";
+            };
+          };
+        }
+      );
+      default = [ ];
+      description = "Ordered project template rules. The first matching directory wins; unmatched projects use `template`.";
     };
 
     environment = mkOption {

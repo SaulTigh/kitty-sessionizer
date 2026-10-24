@@ -21,6 +21,7 @@
 : ${KS_KITTY_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/kitty}
 : ${KS_SESSION_DIR:=${XDG_DATA_HOME:-$HOME/.local/share}/kitty/sessions}
 : ${KS_TEMPLATE:=$KS_KITTY_CONFIG_DIR/default.kitty-session}
+: ${KS_TEMPLATE_RULES:=}
 
 # Suffix of a generated session file, and the name a project uses to carry its
 # own layout. A project file wins over the generated one.

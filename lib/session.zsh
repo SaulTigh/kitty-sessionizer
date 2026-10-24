@@ -24,6 +24,43 @@ ks_session_path_for() {
     REPLY="$KS_SESSION_DIR/${repo:h:t}$KS_SESSION_NAME_SEP${repo:t}$KS_SESSION_SUFFIX"
 }
 
+ks_session_template_for() {
+    local repo="$1" rule directory template
+    while [[ "$repo" == */ && "$repo" != / ]]; do
+        repo="${repo%/}"
+    done
+    REPLY="$KS_TEMPLATE"
+    [[ -n "$KS_TEMPLATE_RULES" ]] || return 0
+    for rule in "${(@f)KS_TEMPLATE_RULES}"; do
+        [[ "$rule" == *$'\t'* ]] || ks_die "invalid template rule: expected directory and template"
+        directory="${rule%%$'\t'*}"
+        template="${rule#*$'\t'}"
+        [[ "$directory" == /* && "$template" == /* ]] || ks_die "invalid template rule: expected absolute directory and template"
+        while [[ "$directory" == */ && "$directory" != / ]]; do
+            directory="${directory%/}"
+        done
+        if [[ "$directory" == / || "$repo" == "$directory" || "$repo" == "$directory/"* ]]; then
+            REPLY="$template"
+            return 0
+        fi
+    done
+}
+
+ks_session_check_template() {
+    local repo="$1"
+    [[ -n "${KS_TEMPLATE_RULES:-}" ]] || return 0
+    ks_session_path_for "$repo"
+    [[ "$REPLY" == "$repo/$KS_LOCAL_SESSION_NAME" ]] && return 0
+    ks_session_template_for "$repo"
+    [[ -r "$REPLY" ]] || ks_die "missing session template: $REPLY"
+}
+
+ks_session_check_tracked_template() {
+    ks_tracker_project "$1"
+    [[ -n "$REPLY" ]] && ks_session_check_template "$REPLY"
+    return 0
+}
+
 # Render the template for a project. Runs once, on the first switch to it.
 #
 # @@session@@ is the project alone, not the name of the session file. The
@@ -34,7 +71,8 @@ ks_session_ensure() {
     local session="$1" repo="$2"
     [[ -f "$session" ]] && return 0
     [[ -d "$repo" ]] || ks_die "not a directory: $repo"
-    [[ -r "$KS_TEMPLATE" ]] || ks_die "missing session template: $KS_TEMPLATE"
+    ks_session_template_for "$repo"
+    [[ -r "$REPLY" ]] || ks_die "missing session template: $REPLY"
 
     ks_session_render "$repo"
     mkdir -p "${session:h}"
@@ -47,7 +85,8 @@ ks_session_render() {
     while [[ "$repo" == */ ]]; do
         repo="${repo%/}"
     done
-    REPLY="$(<"$KS_TEMPLATE")"
+    ks_session_template_for "$repo"
+    REPLY="$(<"$REPLY")"
     REPLY="${REPLY//@@session-path@@/$repo}"
     REPLY="${REPLY//@@session@@/${repo:t}}"
 }
@@ -100,9 +139,11 @@ ks_session_restore_defaults() {
 
     ks_tracker_project "$session"
     repo="$REPLY"
-    [[ -n "$repo" && -d "$repo" && -r "$KS_TEMPLATE" ]] || return 0
+    [[ -n "$repo" && -d "$repo" ]] || return 0
     ks_session_path_for "$repo"
     [[ "$REPLY" == "$session" && "$session" != "$repo/$KS_LOCAL_SESSION_NAME" ]] || return 0
+    ks_session_template_for "$repo"
+    [[ -r "$REPLY" ]] || return 0
 
     ks_kitty_match_pattern "$name"
     ks_kitty_tab_titles --match-tab "session:^${REPLY}\$"
@@ -138,6 +179,7 @@ ks_session_goto() {
 # that at a different moment.
 ks_session_enter() {
     local repo="$1" session
+    ks_session_check_template "$repo"
     ks_session_path_for "$repo"
     session="$REPLY"
     ks_session_ensure "$session" "$repo"
@@ -247,6 +289,7 @@ ks_session_cycle() {
     ks_tracker_cycle_target "$1" "$current"
     target="$REPLY"
     [[ -n "$target" ]] || return 0
+    ks_session_check_tracked_template "$target"
     ks_kitty_save_session "$current"
     ks_tracker_set_current "$target"
     ks_session_goto "$target"
@@ -265,6 +308,7 @@ ks_session_last() {
     [[ -n "$target" && "$target" != "$current" && -f "$target" ]] || return 0
     ks_kitty_live_session_names
     (( ${reply[(Ie)${target:t:r}]} )) || return 0
+    ks_session_check_tracked_template "$target"
     ks_kitty_save_session "$current"
     ks_tracker_set_current "$target"
     ks_session_goto "$target"
