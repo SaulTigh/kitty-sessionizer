@@ -24,8 +24,8 @@ deps: ## Check that every tool in lib/config.zsh is installed
 install: deps ## Check the tools, then link the dispatcher into PREFIX/bin
 	@mkdir -p "$(BINDIR)"
 	@if [ -e "$(TARGET)" ] && [ ! -L "$(TARGET)" ]; then \
-	    mv "$(TARGET)" "$(TARGET).pre-refactor"; \
-	    echo "kept the previous file as $(TARGET).pre-refactor"; \
+	    mv "$(TARGET)" "$(TARGET).bak"; \
+	    echo "kept the previous file as $(TARGET).bak"; \
 	fi
 	@ln -sfn "$(ROOT)/bin/kitty-sessionizer" "$(TARGET)"
 	@echo "linked $(TARGET)"
