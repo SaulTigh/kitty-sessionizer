@@ -17,7 +17,8 @@ its own session file, so its tabs and panes come back the way you left them.
 | git | clones a repository |
 | nvim, or your `KS_EDITOR` | opens a selected file |
 
-`make install` checks that every tool is in place before it links anything.
+`make install` checks that every tool is in place and that kitty is new enough
+before it links anything.
 
 kitty must allow remote control. Put these lines in `kitty.conf`:
 

@@ -11,14 +11,16 @@ help: ## Show this text
 	  | awk -F':.*?## ' '{ printf "  %-10s %s\n", $$1, $$2 }'
 
 .PHONY: deps
-deps: ## Check that every tool in lib/config.zsh is installed
+deps: ## Check that every tool in lib/config.zsh is installed and kitty is 0.48 or later
 	@zsh -c 'set -u; KS_ROOT="$(ROOT)"; KS_LIB="$$KS_ROOT/lib"; \
 	  source "$$KS_LIB/bootstrap.zsh"; ks_use config; missing=0; \
 	  for var in KS_KITTEN KS_FD KS_FZF KS_GUM KS_TREE KS_BAT KS_GIT KS_EDITOR; do \
 	    ( ks_require_tools "$$var" ) || missing=1; \
 	  done; \
 	  (( ! missing )) || { print -ru2 -- "install the missing tools, or export the KS_* variable with another path"; exit 1 }; \
-	  print -r -- "all tools found"'
+	  version="$${$${(s: :)$$("$$KS_KITTEN" --version 2>/dev/null || true)}[2]:-0}"; parts=("$${(s:.:)version}"); \
+	  (( parts[1] > 0 || parts[2] >= 48 )) || { print -ru2 -- "kitty $$version is too old, install 0.48 or later"; exit 1 }; \
+	  print -r -- "all tools found, kitty $$version"'
 
 .PHONY: install
 install: deps ## Check the tools, then link the dispatcher into PREFIX/bin
