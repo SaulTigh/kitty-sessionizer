@@ -365,11 +365,11 @@ test_picker_query_keeps_open_sessions_above_better_matches() {
     local name out
     local -a open=() rest=()
     mkdir -p "$TMP/cache"
-    for name in customer-screening customerscreening.api; do
+    for name in image-resizer imageresizer.api; do
         ks_picker_row "$TMP/work/$name" "$KS_SESSION_DIR/work-$name.kitty-session"
         open+=("$REPLY")
     done
-    for name in cxustomerscreening unrelated customerscreening; do
+    for name in ixmageresizer unrelated imageresizer; do
         ks_picker_row "$TMP/work/$name" "$KS_SESSION_DIR/work-$name.kitty-session"
         rest+=("$REPLY")
     done
@@ -377,9 +377,9 @@ test_picker_query_keeps_open_sessions_above_better_matches() {
     ks_write_lines "$TMP/cache/rest" "${rest[@]}"
     : > "$TMP/cache/done"
 
-    out="$(rank customerscreening)"
+    out="$(rank imageresizer)"
     picker_paths "$out"
-    assert_eq "${reply[*]}" "$TMP/work/customer-screening $TMP/work/customerscreening.api $TMP/work/customerscreening $TMP/work/cxustomerscreening" "ranked rows"
+    assert_eq "${reply[*]}" "$TMP/work/image-resizer $TMP/work/imageresizer.api $TMP/work/imageresizer $TMP/work/ixmageresizer" "ranked rows"
 }
 
 test_picker_query_with_no_match_is_not_an_error() {
